@@ -173,6 +173,11 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_replace_me"
 CLERK_SECRET_KEY="sk_test_replace_me"
 STRIPE_SECRET_KEY="sk_test_replace_me"
 STRIPE_WEBHOOK_SECRET="whsec_replace_me"
+TWILIO_ACCOUNT_SID=""
+TWILIO_AUTH_TOKEN=""
+TWILIO_WHATSAPP_FROM=""
+TWILIO_WHATSAPP_ORDER_TEMPLATE_SID=""
+TWILIO_WHATSAPP_DEFAULT_COUNTRY_CODE="+212"
 NEXT_PUBLIC_ENABLE_CMI="false"
 CMI_CLIENT_ID=""
 CMI_STORE_KEY=""
@@ -190,6 +195,11 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="replace_with_base64_32_byte_key"
 - `CLERK_SECRET_KEY`: Clerk server key
 - `STRIPE_SECRET_KEY`: Stripe server secret
 - `STRIPE_WEBHOOK_SECRET`: Stripe webhook signature secret
+- `TWILIO_ACCOUNT_SID`: optional Twilio account SID for WhatsApp notifications
+- `TWILIO_AUTH_TOKEN`: optional Twilio auth token for WhatsApp notifications
+- `TWILIO_WHATSAPP_FROM`: optional Twilio WhatsApp sender, typically `whatsapp:+...`
+- `TWILIO_WHATSAPP_ORDER_TEMPLATE_SID`: optional Twilio content/template SID for order confirmations
+- `TWILIO_WHATSAPP_DEFAULT_COUNTRY_CODE`: optional default country code used to normalize local phone numbers
 - `NEXT_PUBLIC_ENABLE_CMI`: optional public flag that exposes the CMI card option in checkout
 - `CMI_CLIENT_ID`: optional CMI merchant client id, required only when CMI card checkout is enabled
 - `CMI_STORE_KEY`: optional CMI signing key, required only when CMI card checkout is enabled

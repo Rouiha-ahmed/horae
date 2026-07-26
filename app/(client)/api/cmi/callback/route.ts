@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyCMICallback } from "@/lib/cmi";
 import { getAdminDataTag, orderStatusToDeliveryStatus } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import { sendOrderConfirmationWhatsApp } from "@/lib/services/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,14 @@ export async function POST(req: NextRequest) {
 
   const order = await prisma.order.findUnique({
     where: { orderNumber: oid },
-    select: { id: true, status: true, paymentStatus: true },
+    select: {
+      id: true,
+      status: true,
+      paymentStatus: true,
+      customerName: true,
+      orderNumber: true,
+      shippingPhone: true,
+    },
   });
 
   if (!order) {
@@ -69,6 +77,12 @@ export async function POST(req: NextRequest) {
         // Store CMI transaction reference (reusing the external payment ID field)
         stripePaymentIntentId: params.TransId || params.TRANID || null,
       },
+    });
+
+    await sendOrderConfirmationWhatsApp({
+      customerName: order.customerName,
+      orderNumber: order.orderNumber,
+      phone: order.shippingPhone,
     });
   } else {
     // ── Payment declined or error — restore stock ──

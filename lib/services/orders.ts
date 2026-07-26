@@ -8,6 +8,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { upsertAppUser, type AppUserIdentity } from "@/lib/services/customer";
 import { findPromoCodeByCode, incrementPromoUsage } from "@/lib/services/promo";
+import { sendOrderConfirmationWhatsApp } from "@/lib/services/whatsapp";
 import type { Address, Product } from "@/types";
 
 type GroupedCartItem = {
@@ -229,6 +230,12 @@ export async function createManualOrderRecord(input: CreateManualOrderInput) {
     return createdOrder;
   });
 
+  await sendOrderConfirmationWhatsApp({
+    customerName: order.customerName,
+    orderNumber: order.orderNumber,
+    phone: order.shippingPhone,
+  });
+
   return {
     orderId: order.id,
     orderNumber: order.orderNumber,
@@ -294,8 +301,9 @@ export async function createOrderFromStripeSession(
   }
 
   const productIds = [...quantityByProductId.keys()];
+  let createdOrder = false;
 
-  return prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx) => {
     const duplicate = await tx.order.findUnique({
       where: {
         stripeCheckoutSessionId: session.id,
@@ -397,6 +405,7 @@ export async function createOrderFromStripeSession(
         },
       },
     });
+    createdOrder = true;
 
     if (promoCode) {
       const promo = await tx.promoCode.findUnique({
@@ -424,4 +433,14 @@ export async function createOrderFromStripeSession(
 
     return order;
   });
+
+  if (createdOrder) {
+    await sendOrderConfirmationWhatsApp({
+      customerName: order.customerName,
+      orderNumber: order.orderNumber,
+      phone: order.shippingPhone,
+    });
+  }
+
+  return order;
 }

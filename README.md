@@ -28,6 +28,11 @@ CLERK_SECRET_KEY="sk_test_replace_me"
 
 STRIPE_SECRET_KEY="sk_test_replace_me"
 STRIPE_WEBHOOK_SECRET="whsec_replace_me"
+TWILIO_ACCOUNT_SID=""
+TWILIO_AUTH_TOKEN=""
+TWILIO_WHATSAPP_FROM=""
+TWILIO_WHATSAPP_ORDER_TEMPLATE_SID=""
+TWILIO_WHATSAPP_DEFAULT_COUNTRY_CODE="+212"
 NEXT_PUBLIC_ENABLE_CMI="false"
 CMI_CLIENT_ID=""
 CMI_STORE_KEY=""
@@ -41,6 +46,8 @@ Prisma CLI reads from `.env` in this repo.
 `DATABASE_URL_POOLED` is optional and useful for hosted/serverless production runtimes that need a pooled Postgres connection.
 
 Set `NEXT_PUBLIC_ENABLE_CMI="true"` only when `CMI_CLIENT_ID` and `CMI_STORE_KEY` are configured for production. Otherwise the storefront keeps the CMI payment option hidden and falls back to cash on delivery only.
+
+WhatsApp order confirmations are optional. If `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_WHATSAPP_FROM` are configured, the app will try to send a WhatsApp confirmation when an order is successfully created or paid. If `TWILIO_WHATSAPP_ORDER_TEMPLATE_SID` is set, Twilio template messaging is used. Otherwise the app falls back to a plain text body, which may still be rejected by WhatsApp outside the allowed customer-service window.
 
 ## Install
 
