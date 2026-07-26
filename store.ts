@@ -11,6 +11,7 @@ interface StoreState {
   items: CartItem[];
   hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
+  replaceCart: (items: CartItem[]) => void;
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
   deleteCartProduct: (productId: string) => void;
@@ -33,6 +34,7 @@ const useStore = create<StoreState>()(
       hasHydrated: false,
       favoriteProduct: [],
       setHasHydrated: (value) => set({ hasHydrated: value }),
+      replaceCart: (items) => set({ items }),
       addItem: (product) =>
         set((state) => {
           const existingItem = state.items.find(
