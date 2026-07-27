@@ -174,6 +174,7 @@ CLERK_SECRET_KEY="sk_test_replace_me"
 TWILIO_ACCOUNT_SID=""
 TWILIO_AUTH_TOKEN=""
 TWILIO_WHATSAPP_FROM=""
+TWILIO_CONTENT_SID=""
 TWILIO_WHATSAPP_ORDER_TEMPLATE_SID=""
 TWILIO_WHATSAPP_DEFAULT_COUNTRY_CODE="+212"
 NEXT_PUBLIC_ENABLE_CMI="false"
@@ -194,6 +195,7 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="replace_with_base64_32_byte_key"
 - `TWILIO_ACCOUNT_SID`: optional Twilio account SID for WhatsApp notifications
 - `TWILIO_AUTH_TOKEN`: optional Twilio auth token for WhatsApp notifications
 - `TWILIO_WHATSAPP_FROM`: optional Twilio WhatsApp sender, typically `whatsapp:+...`
+- `TWILIO_CONTENT_SID`: optional preferred Twilio Content SID for WhatsApp order confirmations
 - `TWILIO_WHATSAPP_ORDER_TEMPLATE_SID`: optional Twilio content/template SID for order confirmations
 - `TWILIO_WHATSAPP_DEFAULT_COUNTRY_CODE`: optional default country code used to normalize local phone numbers
 - `NEXT_PUBLIC_ENABLE_CMI`: optional public flag that exposes the CMI card option in checkout

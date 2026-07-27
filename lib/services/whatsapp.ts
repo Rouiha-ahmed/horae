@@ -61,7 +61,9 @@ const getTwilioConfig = () => {
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
   const from = toWhatsAppAddress(process.env.TWILIO_WHATSAPP_FROM);
-  const contentSid = process.env.TWILIO_WHATSAPP_ORDER_TEMPLATE_SID?.trim();
+  const contentSid =
+    process.env.TWILIO_CONTENT_SID?.trim() ||
+    process.env.TWILIO_WHATSAPP_ORDER_TEMPLATE_SID?.trim();
 
   if (!accountSid || !authToken || !from) {
     return null;
@@ -82,9 +84,9 @@ const buildConfirmationBody = ({
   customerName,
   orderNumber,
 }: OrderConfirmationWhatsAppInput) => {
-  const name = customerName?.trim() || "Client";
+  const name = customerName?.trim() || "عميلنا العزيز";
   const orderReference = getPublicOrderReference(orderNumber);
-  return `Bonjour ${name}, votre commande Zayna #${orderReference} a bien ete recue. Merci pour votre achat.`;
+  return `مرحبا ${name}، تم تسجيل طلبكم لدى Zayna بنجاح. رقم الطلب هو #${orderReference}. شكرا لثقتكم بنا.`;
 };
 
 const sendTwilioWhatsAppMessage = async (input: {
@@ -150,7 +152,7 @@ export async function sendOrderConfirmationWhatsApp(
 
   try {
     const orderReference = getPublicOrderReference(input.orderNumber);
-    const customerName = input.customerName?.trim() || "Client";
+    const customerName = input.customerName?.trim() || "عميلنا العزيز";
 
     return await sendTwilioWhatsAppMessage({
       to,
