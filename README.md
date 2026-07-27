@@ -1,6 +1,6 @@
 # Zayna
 
-Zayna is a Next.js ecommerce/parapharmacy storefront using Clerk for authentication, Prisma for data access, PostgreSQL for persistence, and Stripe for card checkout.
+ Zayna is a Next.js ecommerce/parapharmacy storefront using Clerk for authentication, Prisma for data access, PostgreSQL for persistence, and CMI plus manual payment flows for checkout.
 
 Full project documentation is available in [docs/APPLICATION_DOCUMENTATION.md](./docs/APPLICATION_DOCUMENTATION.md).
 
@@ -10,7 +10,7 @@ Full project documentation is available in [docs/APPLICATION_DOCUMENTATION.md](.
 - Clerk
 - Prisma ORM
 - PostgreSQL
-- Stripe Checkout + webhook
+- CMI payment gateway + manual order flow
 
 ## Environment Variables
 
@@ -25,9 +25,6 @@ ADMIN_USER_IDS=""
 
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_replace_me"
 CLERK_SECRET_KEY="sk_test_replace_me"
-
-STRIPE_SECRET_KEY="sk_test_replace_me"
-STRIPE_WEBHOOK_SECRET="whsec_replace_me"
 TWILIO_ACCOUNT_SID=""
 TWILIO_AUTH_TOKEN=""
 TWILIO_WHATSAPP_FROM=""
@@ -102,24 +99,6 @@ App URL:
 ```bash
 http://localhost:3000
 ```
-
-## Stripe Webhook
-
-Card checkout uses Stripe Checkout. For local webhook forwarding:
-
-```bash
-stripe listen --forward-to localhost:3000/api/webhook
-```
-
-Copy the returned `whsec_...` value into `STRIPE_WEBHOOK_SECRET`.
-
-Test card:
-
-```text
-4242 4242 4242 4242
-```
-
-Use any future expiry date, any CVC, and any ZIP code.
 
 ## Build
 

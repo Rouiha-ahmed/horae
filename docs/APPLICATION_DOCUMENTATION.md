@@ -7,7 +7,7 @@ Zayna is an e-commerce parapharmacy application built with Next.js. It includes:
 - a public storefront for browsing and buying products
 - customer authentication with Clerk
 - a shopping cart and wishlist stored in the browser
-- checkout with Stripe for card payments
+- checkout with CMI card payments and manual order flows
 - manual order creation for cash on delivery and installment payments
 - an admin dashboard for managing products, categories, brands, promo codes, and orders
 
@@ -24,7 +24,7 @@ The application is designed around a PostgreSQL database accessed through Prisma
 - Clerk for authentication
 - Prisma ORM
 - PostgreSQL
-- Stripe Checkout and Stripe webhook
+- CMI payment gateway callbacks
 - Zustand for cart and wishlist state
 - shadcn/ui and Radix UI components
 - Motion for UI animations
@@ -91,7 +91,7 @@ store.ts              Zustand cart and wishlist store
    - Prisma reads and writes PostgreSQL.
 4. External services
    - Clerk handles sign-in and session identity.
-   - Stripe handles card checkout and payment confirmation.
+   - CMI handles card payment confirmation.
 5. Media layer
    - Uploaded images are optimized with Sharp and stored in `public/static-assets`.
 
@@ -171,8 +171,6 @@ ADMIN_EMAILS="admin@example.com"
 ADMIN_USER_IDS=""
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_replace_me"
 CLERK_SECRET_KEY="sk_test_replace_me"
-STRIPE_SECRET_KEY="sk_test_replace_me"
-STRIPE_WEBHOOK_SECRET="whsec_replace_me"
 TWILIO_ACCOUNT_SID=""
 TWILIO_AUTH_TOKEN=""
 TWILIO_WHATSAPP_FROM=""
@@ -188,13 +186,11 @@ NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="replace_with_base64_32_byte_key"
 
 - `DATABASE_URL`: PostgreSQL connection string for Prisma
 - `DATABASE_URL_POOLED`: optional pooled runtime connection string for hosted/serverless production
-- `NEXT_PUBLIC_BASE_URL`: base URL used by Stripe redirect URLs and absolute image URLs
+- `NEXT_PUBLIC_BASE_URL`: base URL used by CMI redirect URLs and absolute image URLs
 - `ADMIN_EMAILS`: comma-separated list of Clerk emails allowed in admin
 - `ADMIN_USER_IDS`: comma-separated list of Clerk user ids allowed in admin
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk frontend key
 - `CLERK_SECRET_KEY`: Clerk server key
-- `STRIPE_SECRET_KEY`: Stripe server secret
-- `STRIPE_WEBHOOK_SECRET`: Stripe webhook signature secret
 - `TWILIO_ACCOUNT_SID`: optional Twilio account SID for WhatsApp notifications
 - `TWILIO_AUTH_TOKEN`: optional Twilio auth token for WhatsApp notifications
 - `TWILIO_WHATSAPP_FROM`: optional Twilio WhatsApp sender, typically `whatsapp:+...`

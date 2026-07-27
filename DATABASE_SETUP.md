@@ -42,9 +42,6 @@ NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_replace_me"
 CLERK_SECRET_KEY="sk_test_replace_me"
-
-STRIPE_SECRET_KEY="sk_test_replace_me"
-STRIPE_WEBHOOK_SECRET="whsec_replace_me"
 ```
 
 ## 4. Install dependencies
