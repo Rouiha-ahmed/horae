@@ -105,6 +105,8 @@ const sendTwilioWhatsAppMessage = async (input: {
   params.set("To", input.to);
 
   const contentSid = input.contentSid ?? config.contentSid;
+  // Prefer a Twilio-approved template when available, with a plain Arabic
+  // message fallback so order confirmations still go out during setup.
   if (contentSid) {
     params.set("ContentSid", contentSid);
     params.set(
