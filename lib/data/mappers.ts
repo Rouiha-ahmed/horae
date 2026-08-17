@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import type { Address, AppImage, Brand, Category, MyOrder, Product } from "@/types";
+import { isProductPromotionCurrentlyActive } from "@/lib/products/domain";
 
 const decimalToNumber = (value: Prisma.Decimal | number | null | undefined) => {
   if (value === null || value === undefined) {
@@ -96,6 +97,8 @@ export const mapProduct = (product: {
   isBestSeller?: boolean;
   isNewArrival?: boolean;
   isPromotion?: boolean;
+  promotionStartsAt?: Date | string | null;
+  promotionEndsAt?: Date | string | null;
   brand?: {
     id: string;
     title: string;
@@ -114,9 +117,16 @@ export const mapProduct = (product: {
     };
   }>;
 }): Product => {
-  const price = decimalToNumber(product.price) ?? 0;
-  const regularPrice = decimalToNumber(product.regularPrice) ?? price;
+  const sourcePrice = decimalToNumber(product.price) ?? 0;
+  const regularPrice = decimalToNumber(product.regularPrice) ?? sourcePrice;
   const salePrice = decimalToNumber(product.salePrice);
+  const promotionActive = isProductPromotionCurrentlyActive({
+    isPromotion: Boolean(product.isPromotion),
+    discount: product.discount,
+    promotionStartsAt: product.promotionStartsAt ?? null,
+    promotionEndsAt: product.promotionEndsAt ?? null,
+  });
+  const price = promotionActive ? (salePrice ?? sourcePrice) : regularPrice;
   const derivedDiscount =
     regularPrice > 0 && typeof salePrice === "number" && salePrice > 0 && salePrice < regularPrice
       ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
@@ -134,15 +144,19 @@ export const mapProduct = (product: {
       product.description || product.shortDescription || product.fullDescription || null,
     price,
     regularPrice,
-    salePrice: typeof salePrice === "number" ? salePrice : null,
-    discount: product.discount > 0 ? product.discount : derivedDiscount,
+    salePrice: promotionActive ? (salePrice ?? sourcePrice) : null,
+    discount: promotionActive
+      ? product.discount > 0
+        ? product.discount
+        : derivedDiscount
+      : 0,
     stock: product.stock,
     status: product.status as Product["status"],
     isActive: typeof product.isActive === "boolean" ? product.isActive : true,
     isFeatured: product.isFeatured,
     isBestSeller: Boolean(product.isBestSeller),
     isNewArrival: Boolean(product.isNewArrival),
-    isPromotion: Boolean(product.isPromotion),
+    isPromotion: promotionActive,
     brand: product.brand ? mapBrand(product.brand) : null,
     images: product.images
       .map((image) => toImage(image.url, image.id, image.altText))

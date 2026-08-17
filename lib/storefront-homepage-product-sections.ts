@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 
 import { mapProduct } from "@/lib/data/mappers";
 import { prisma } from "@/lib/prisma";
+import { sellableProductWhere } from "@/lib/products/storefront-rules";
 import type { Product } from "@/types";
 
 const productSelect = {
@@ -10,11 +11,16 @@ const productSelect = {
   slug: true,
   description: true,
   price: true,
+  regularPrice: true,
+  salePrice: true,
   discount: true,
   stock: true,
   status: true,
   isActive: true,
   isFeatured: true,
+  isPromotion: true,
+  promotionStartsAt: true,
+  promotionEndsAt: true,
   images: {
     orderBy: {
       sortOrder: "asc" as const,
@@ -148,7 +154,7 @@ export async function getStorefrontCustomHomepageProductSections(): Promise<
           orderBy: [{ order: "asc" }, { createdAt: "asc" }],
           where: {
             product: {
-              isActive: true,
+              ...sellableProductWhere,
             },
           },
           include: {

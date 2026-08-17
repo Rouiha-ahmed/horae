@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { verifyCMICallback } from "@/lib/cmi";
-import { getAdminDataTag, orderStatusToDeliveryStatus } from "@/lib/admin";
+import { getAdminDataTag } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { sendOrderConfirmationWhatsApp } from "@/lib/services/whatsapp";
+import { adjustInventoryInTransaction } from "@/lib/inventory";
 
 export const dynamic = "force-dynamic";
 
@@ -57,8 +58,9 @@ export async function POST(req: NextRequest) {
     return new NextResponse("ORDER_NOT_FOUND", { status: 404 });
   }
 
-  // Guard against duplicate callbacks
-  if (order.paymentStatus === "paid") {
+  // Guard against duplicate or late callbacks. A terminal failed payment has
+  // already restored stock and must never do it a second time.
+  if (!(["pending", "partial"] as string[]).includes(order.paymentStatus)) {
     return new NextResponse("ACTION=POSTAUTH", {
       status: 200,
       headers: { "Content-Type": "text/plain" },
@@ -67,16 +69,39 @@ export async function POST(req: NextRequest) {
 
   if (procReturnCode === "00") {
     // ── Payment approved ──
-    await prisma.order.update({
-      where: { orderNumber: oid },
-      data: {
-        paymentStatus: "paid",
-        status:        "processing",
-        deliveryStatus: orderStatusToDeliveryStatus("processing"),
-        ...(order.status !== "processing" ? { statusChangedAt: new Date() } : {}),
-        // Store CMI transaction reference (reusing the external payment ID field)
-        stripePaymentIntentId: params.TransId || params.TRANID || null,
-      },
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.order.updateMany({
+        where: { id: order.id, paymentStatus: { in: ["pending", "partial"] } },
+        data: {
+          paymentStatus: "paid",
+          // Legacy storefront dimension only. Operational preparation and
+          // delivery remain independent and unchanged.
+          status: "paid",
+          statusChangedAt: new Date(),
+          version: { increment: 1 },
+          stripePaymentIntentId: params.TransId || params.TRANID || null,
+        },
+      });
+      if (updated.count !== 1) return;
+      await Promise.all([
+        tx.orderEvent.create({
+          data: {
+            orderId: order.id,
+            type: "PAYMENT_CAPTURED",
+            title: "Paiement CMI confirmé",
+            actorName: "Passerelle CMI",
+            metadata: { transactionId: params.TransId || params.TRANID || null },
+          },
+        }),
+        tx.adminAuditLog.create({
+          data: {
+            action: "order.payment_captured",
+            entity: "Order",
+            entityId: order.id,
+            metadata: { source: "cmi_callback", transactionId: params.TransId || params.TRANID || null },
+          },
+        }),
+      ]);
     });
 
     await sendOrderConfirmationWhatsApp({
@@ -86,30 +111,57 @@ export async function POST(req: NextRequest) {
     });
   } else {
     // ── Payment declined or error — restore stock ──
-    const items = await prisma.orderItem.findMany({
-      where: { orderId: order.id },
-      select: { productId: true, quantity: true },
-    });
-
     await prisma.$transaction(async (tx) => {
+      const transitioned = await tx.order.updateMany({
+        where: { id: order.id, paymentStatus: { in: ["pending", "partial"] } },
+        data: {
+          status: "cancelled",
+          fulfillmentStatus: "cancelled",
+          paymentStatus: "failed",
+          deliveryStatus: "not_assigned",
+          statusChangedAt: new Date(),
+          version: { increment: 1 },
+        },
+      });
+      if (transitioned.count !== 1) return;
+
+      const items = await tx.orderItem.findMany({
+        where: { orderId: order.id },
+        select: { productId: true, quantity: true },
+      });
       for (const item of items) {
         if (item.productId) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { increment: item.quantity } },
-            select: { id: true },
+          await adjustInventoryInTransaction(tx, {
+            productId: item.productId,
+            quantityDelta: item.quantity,
+            reason: "ORDER_CANCELLED",
+            relatedOrderId: order.id,
+            idempotencyKey: `order:${order.id}:restore:${item.productId}`,
+            actor: { name: "Passerelle CMI" },
+            note: `Restitution après échec du paiement ${order.orderNumber}`,
           });
         }
       }
-      await tx.order.update({
-        where: { orderNumber: oid },
-        data: {
-          status: "cancelled",
-          paymentStatus: "failed",
-          deliveryStatus: orderStatusToDeliveryStatus("cancelled"),
-          ...(order.status !== "cancelled" ? { statusChangedAt: new Date() } : {}),
-        },
-      });
+      await Promise.all([
+        tx.orderEvent.create({
+          data: {
+            orderId: order.id,
+            type: "PAYMENT_FAILED",
+            title: "Paiement CMI refusé",
+            description: params.ErrMsg || params.mdStatus || null,
+            actorName: "Passerelle CMI",
+            metadata: { returnCode: procReturnCode || null },
+          },
+        }),
+        tx.adminAuditLog.create({
+          data: {
+            action: "order.payment_failed",
+            entity: "Order",
+            entityId: order.id,
+            metadata: { source: "cmi_callback", returnCode: procReturnCode || null },
+          },
+        }),
+      ]);
     });
   }
 

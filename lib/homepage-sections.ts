@@ -143,6 +143,8 @@ export type HomepageProductSectionConfig = {
   sortBy: HomepageProductSortBy | null;
   sortOrder: HomepageSortOrder;
   hideIfEmpty: boolean;
+  excludeOutOfStock: boolean;
+  periodDays: number | null;
 };
 
 export type HomepageDynamicSection = {
@@ -255,6 +257,11 @@ export const parseProductSectionConfig = (
     min: 1,
     max: 30,
   });
+  const periodDays = asInteger(parsed.periodDays, {
+    fallback: null,
+    min: 1,
+    max: 365,
+  });
 
   return {
     sourceType: isProductSourceType(sourceTypeInput) ? sourceTypeInput : "featured",
@@ -273,6 +280,8 @@ export const parseProductSectionConfig = (
     sortBy: isProductSortBy(sortByInput) ? sortByInput : null,
     sortOrder: isSortOrder(sortOrderInput) ? sortOrderInput : "desc",
     hideIfEmpty: asBoolean(parsed.hideIfEmpty, true),
+    excludeOutOfStock: asBoolean(parsed.excludeOutOfStock, true),
+    periodDays,
   };
 };
 

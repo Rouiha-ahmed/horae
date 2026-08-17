@@ -13,6 +13,7 @@ interface HeaderMenuProps {
   categories: Category[];
   className?: string;
   isSearchActive?: boolean;
+  pathnameOverride?: string;
 }
 
 const HeaderMenu = ({
@@ -20,8 +21,10 @@ const HeaderMenu = ({
   categories,
   className,
   isSearchActive = false,
+  pathnameOverride,
 }: HeaderMenuProps) => {
-  const pathname = usePathname();
+  const currentPathname = usePathname();
+  const pathname = pathnameOverride || currentPathname;
   const { primaryLinks, secondaryLinks } = organizeHeaderLinks(links);
   const { topLevelCategories, childrenByParent } = buildCategoryTree(categories);
 

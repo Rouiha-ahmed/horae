@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 
 import { getAdminDataTag, requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import { sellableProductWhere } from "@/lib/products/storefront-rules";
 
 const adminDataTag = getAdminDataTag();
 const homepageProductSectionEntities = [
@@ -113,6 +114,7 @@ export type AdminHomepageProductSectionsData = {
 async function loadAdminHomepageProducts(): Promise<AdminHomepageProductSectionsData["products"]> {
   try {
     const products = await prisma.product.findMany({
+      where: sellableProductWhere,
       orderBy: [{ name: "asc" }],
       select: {
         id: true,
@@ -227,7 +229,7 @@ async function fetchAdminHomepageProductSectionsData(): Promise<AdminHomepagePro
         id: item.product.id,
         name: item.product.name,
         slug: item.product.slug,
-        isActive: productActiveById.get(item.product.id) ?? true,
+        isActive: productActiveById.get(item.product.id) ?? false,
         order: item.order,
       })),
     })),

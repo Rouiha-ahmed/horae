@@ -4,6 +4,8 @@ import {
   type PromoCalculationResult,
 } from "@/lib/promo";
 import { prisma } from "@/lib/prisma";
+import { adjustInventoryInTransaction } from "@/lib/inventory";
+import { getEffectiveProductUnitPrice } from "@/lib/products/domain";
 import { upsertAppUser, type AppUserIdentity } from "@/lib/services/customer";
 import { findPromoCodeByCode, incrementPromoUsage } from "@/lib/services/promo";
 import { sendOrderConfirmationWhatsApp } from "@/lib/services/whatsapp";
@@ -27,6 +29,12 @@ const orderProductSelect = {
   id: true,
   name: true,
   price: true,
+  regularPrice: true,
+  salePrice: true,
+  isPromotion: true,
+  discount: true,
+  promotionStartsAt: true,
+  promotionEndsAt: true,
   stock: true,
   images: {
     orderBy: {
@@ -71,6 +79,9 @@ export async function createManualOrderRecord(input: CreateManualOrderInput) {
 
   const products = await prisma.product.findMany({
     where: {
+      lifecycleStatus: "ACTIVE",
+      isActive: true,
+      archivedAt: null,
       id: {
         in: productIds,
       },
@@ -89,7 +100,7 @@ export async function createManualOrderRecord(input: CreateManualOrderInput) {
       throw new Error("One or more products are unavailable");
     }
 
-    subtotal += Number(product.price) * requestedQty;
+    subtotal += getEffectiveProductUnitPrice(product) * requestedQty;
   }
 
   const promoCode = input.promoCode?.trim().toUpperCase();
@@ -115,6 +126,9 @@ export async function createManualOrderRecord(input: CreateManualOrderInput) {
   const order = await prisma.$transaction(async (tx) => {
     const liveProducts = await tx.product.findMany({
       where: {
+        lifecycleStatus: "ACTIVE",
+        isActive: true,
+        archivedAt: null,
         id: {
           in: productIds,
         },
@@ -131,27 +145,6 @@ export async function createManualOrderRecord(input: CreateManualOrderInput) {
       if (!product) {
         throw new Error("One or more products are unavailable");
       }
-    }
-
-    for (const productId of productIds) {
-      const product = liveProductById.get(productId);
-      const requestedQty = quantityByProductId.get(productId) || 0;
-
-      if (!product) {
-        continue;
-      }
-
-      await tx.product.update({
-        where: {
-          id: product.id,
-        },
-        data: {
-          stock: Math.max(product.stock - requestedQty, 0),
-        },
-        select: {
-          id: true,
-        },
-      });
     }
 
     const createdOrder = await tx.order.create({
@@ -192,11 +185,47 @@ export async function createManualOrderRecord(input: CreateManualOrderInput) {
             return {
               productId: product.id,
               productNameSnapshot: product.name,
-              productPriceSnapshot: product.price,
+              productPriceSnapshot: getEffectiveProductUnitPrice(product),
               productImageUrlSnapshot: product.images[0]?.url || null,
               quantity,
             };
           }),
+        },
+      },
+    });
+
+    for (const productId of productIds) {
+      const requestedQty = quantityByProductId.get(productId) || 0;
+      await adjustInventoryInTransaction(tx, {
+        productId,
+        quantityDelta: -requestedQty,
+        reason: "ORDER",
+        relatedOrderId: createdOrder.id,
+        idempotencyKey: `order:${createdOrder.id}:reserve:${productId}`,
+        actor: {
+          userId: appUser.clerkUserId,
+          email: input.identity.email,
+          name: input.identity.fullName,
+        },
+        note: `Réservation commande ${createdOrder.orderNumber}`,
+      });
+    }
+
+    await tx.orderEvent.create({
+      data: {
+        orderId: createdOrder.id,
+        type: "ORDER_CREATED",
+        title: "Commande créée",
+        description:
+          input.paymentMethod === "cod"
+            ? "Commande créée avec paiement à la livraison."
+            : "Commande créée avec paiement en ligne.",
+        actorUserId: appUser.clerkUserId,
+        actorEmail: input.identity.email,
+        actorName: input.identity.fullName,
+        metadata: {
+          paymentMethod: input.paymentMethod,
+          source: "storefront",
         },
       },
     });

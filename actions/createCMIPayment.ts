@@ -6,6 +6,8 @@ import { calculatePromoDiscount } from "@/lib/promo";
 import { prisma } from "@/lib/prisma";
 import { findPromoCodeByCode, incrementPromoUsage } from "@/lib/services/promo";
 import { upsertAppUser } from "@/lib/services/customer";
+import { adjustInventoryInTransaction } from "@/lib/inventory";
+import { getEffectiveProductUnitPrice } from "@/lib/products/domain";
 import type { Address } from "@/types";
 import type { CartItem } from "@/store";
 
@@ -53,6 +55,12 @@ export async function createCMIPayment(
     id: true,
     name: true,
     price: true,
+    regularPrice: true,
+    salePrice: true,
+    isPromotion: true,
+    discount: true,
+    promotionStartsAt: true,
+    promotionEndsAt: true,
     stock: true,
     images: {
       orderBy: { sortOrder: "asc" as const },
@@ -62,7 +70,7 @@ export async function createCMIPayment(
 
   // Fetch & validate products
   const products = await prisma.product.findMany({
-    where: { id: { in: productIds } },
+    where: { id: { in: productIds }, lifecycleStatus: "ACTIVE", isActive: true, archivedAt: null },
     select: productSelect,
   });
   const productById = new Map(products.map((p) => [p.id, p]));
@@ -71,7 +79,7 @@ export async function createCMIPayment(
   for (const [id, qty] of quantityByProductId) {
     const p = productById.get(id);
     if (!p) throw new Error("Un ou plusieurs produits sont indisponibles");
-    subtotal += Number(p.price) * qty;
+    subtotal += getEffectiveProductUnitPrice(p) * qty;
   }
 
   // Promo
@@ -98,22 +106,14 @@ export async function createCMIPayment(
   // Create pending order inside a transaction (deducts stock to prevent overselling)
   await prisma.$transaction(async (tx) => {
     const liveProducts = await tx.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, lifecycleStatus: "ACTIVE", isActive: true, archivedAt: null },
       select: productSelect,
     });
     const liveById = new Map(liveProducts.map((p) => [p.id, p]));
 
-    for (const [id, qty] of quantityByProductId) {
-      const p = liveById.get(id);
-      if (!p) throw new Error("Un ou plusieurs produits sont indisponibles");
-      await tx.product.update({
-        where: { id },
-        data: { stock: Math.max(p.stock - qty, 0) },
-        select: { id: true },
-      });
-    }
+    for (const id of productIds) if (!liveById.has(id)) throw new Error("Un ou plusieurs produits sont indisponibles");
 
-    await tx.order.create({
+    const createdOrder = await tx.order.create({
       data: {
         orderNumber:   input.orderNumber,
         userId:        appUser.id,
@@ -141,11 +141,39 @@ export async function createCMIPayment(
             return {
               productId:            p.id,
               productNameSnapshot:  p.name,
-              productPriceSnapshot: p.price,
+              productPriceSnapshot: getEffectiveProductUnitPrice(p),
               productImageUrlSnapshot: p.images[0]?.url || null,
               quantity: quantityByProductId.get(id) || 0,
             };
           }),
+        },
+      },
+    });
+
+    for (const [id, qty] of quantityByProductId) {
+      await adjustInventoryInTransaction(tx, {
+        productId: id,
+        quantityDelta: -qty,
+        reason: "ORDER",
+        relatedOrderId: createdOrder.id,
+        idempotencyKey: `order:${createdOrder.id}:reserve:${id}`,
+        actor: { userId, email: customerEmail, name: customerName },
+        note: `Réservation commande ${createdOrder.orderNumber}`,
+      });
+    }
+
+    await tx.orderEvent.create({
+      data: {
+        orderId: createdOrder.id,
+        type: "ORDER_CREATED",
+        title: "Commande créée",
+        description: "Commande créée avec paiement CMI en attente de confirmation.",
+        actorUserId: userId,
+        actorEmail: customerEmail,
+        actorName: customerName,
+        metadata: {
+          paymentMethod: "cmi_card",
+          source: "storefront",
         },
       },
     });

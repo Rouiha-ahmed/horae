@@ -16,6 +16,7 @@ interface SidebarProps {
   links: StorefrontLink[];
   categories: Category[];
   socialLinks: StorefrontSocialLink[];
+  pathnameOverride?: string;
 }
 
 const SideMenu: FC<SidebarProps> = ({
@@ -24,8 +25,10 @@ const SideMenu: FC<SidebarProps> = ({
   links,
   categories,
   socialLinks,
+  pathnameOverride,
 }) => {
-  const pathname = usePathname();
+  const currentPathname = usePathname();
+  const pathname = pathnameOverride || currentPathname;
   const { primaryLinks, secondaryLinks } = organizeHeaderLinks(links);
   const { topLevelCategories, childrenByParent } = buildCategoryTree(categories);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});

@@ -7,112 +7,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ProductStatus {
-  new
-  hot
-  sale
-}
-
-enum OrderStatus {
-  pending
-  processing
-  paid
-  shipped
-  out_for_delivery
-  delivered
-  cancelled
-}
-
-enum PaymentStatus {
-  pending
-  partial
-  paid
-  failed
-  refunded
-}
-
-enum DeliveryStatus {
-  not_assigned
-  preparing
-  in_transit
-  out_for_delivery
-  delivered
-  delayed
-  failed
-  returned
-}
-
-enum PaymentMethod {
-  cod
-  cmi_card
-  installments
-}
-
-enum PromoDiscountType {
-  percentage
-  fixed
-}
-
-enum LoyaltyTier {
-  bronze
-  silver
-  gold
-}
-
-enum SiteLinkGroup {
-  header
-  footer_quick
-  footer_legal
-}
-
-enum HomepageSectionType {
-  hero
-  product_list
-  category_list
-  brand_list
-  reassurance
-  newsletter
-  custom_banner
-  links_group
-  social_links
-  custom_html
-  rich_text
-}
-
-enum HomepageProductSourceType {
-  manual_selection
-  by_category
-  by_brand
-  by_tag
-  discounted
-  best_sellers
-  newest
-  featured
-}
-
 model User {
-  id                   String      @id @default(cuid())
-  clerkUserId          String      @unique
-  email                String
-  fullName             String
-  loyaltyCardNumber    String      @unique
-  loyaltyPoints        Int         @default(0)
-  loyaltyTier          LoyaltyTier @default(bronze)
-  installmentsEligible Boolean     @default(false)
-  stripeCustomerId     String?
-  addresses            Address[]
-  orders               Order[]
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
+  id                       String                    @id @default(cuid())
+  clerkUserId              String                    @unique
+  email                    String
+  fullName                 String
+  loyaltyCardNumber        String                    @unique
+  loyaltyPoints            Int                       @default(0)
+  loyaltyTier              LoyaltyTier               @default(bronze)
+  installmentsEligible     Boolean                   @default(false)
+  stripeCustomerId         String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  activitySegment          CustomerActivitySegment   @default(NO_PURCHASE)
+  loyaltySuspendedAt       DateTime?
+  loyaltySuspensionReason  String?
+  anonymizationRequestedAt DateTime?
+  anonymizedAt             DateTime?
+  loyaltyTierQualifiedAt   DateTime?
+  loyaltyTierValidUntil    DateTime?
+  addresses                Address[]
+  consents                 CustomerConsent[]
+  exportLogs               CustomerExportLog[]
+  notes                    CustomerNote[]
+  privacyRequests          CustomerPrivacyRequest[]
+  qualityIssues            CustomerQualityIssue[]
+  customerTags             CustomerTagAssignment[]
+  rewardRedemptions        LoyaltyRewardRedemption[]
+  loyaltyTransactions      LoyaltyTransaction[]
+  orders                   Order[]
 
   @@index([email])
   @@index([fullName])
+  @@index([loyaltyTier])
+  @@index([loyaltyTierValidUntil])
+  @@index([activitySegment])
+  @@index([createdAt])
 }
 
 model Address {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   address   String
   city      String
@@ -122,6 +57,7 @@ model Address {
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([userId, isDefault])
@@ -135,15 +71,22 @@ model Category {
   range       Int?
   featured    Boolean           @default(false)
   imageUrl    String?
-  parentId    String?
-  parent      Category?         @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children    Category[]        @relation("CategoryTree")
-  products    ProductCategory[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  parentId    String?
+  isActive    Boolean           @default(true)
+  archivedAt  DateTime?
+  archivedBy  String?
+  parent      Category?         @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[]        @relation("CategoryTree")
+  products    ProductCategory[]
 
   @@index([title])
-  @@index([parentId, title])
+  @@index([parentId, range, title])
+  @@index([isActive, archivedAt])
+  @@index([featured, isActive, archivedAt])
+  @@index([archivedAt])
+  @@index([title(ops: raw("gin_trgm_ops"))], map: "Category_title_trgm_idx", type: Gin)
 }
 
 model Brand {
@@ -152,51 +95,62 @@ model Brand {
   slug        String    @unique
   description String?
   imageUrl    String?
-  isActive    Boolean   @default(true)
-  products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  isActive    Boolean   @default(true)
+  archivedAt  DateTime?
+  archivedBy  String?
+  products    Product[]
 
   @@index([title])
+  @@index([isActive, archivedAt])
+  @@index([archivedAt])
+  @@index([title(ops: raw("gin_trgm_ops"))], map: "Brand_title_trgm_idx", type: Gin)
 }
 
 model Product {
   id                          String                       @id @default(cuid())
   name                        String
   slug                        String                       @unique
-  sku                         String                       @unique
-  barcode                     String?
-  shortDescription            String?
-  fullDescription             String?
   description                 String?
   price                       Decimal                      @db.Decimal(10, 2)
-  regularPrice                Decimal                      @db.Decimal(10, 2)
-  salePrice                   Decimal?                     @db.Decimal(10, 2)
   discount                    Int                          @default(0)
   stock                       Int                          @default(0)
-  lastRestockedAt             DateTime?
   status                      ProductStatus                @default(new)
-  isActive                    Boolean                      @default(true)
   isFeatured                  Boolean                      @default(false)
+  brandId                     String?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  sku                         String                       @unique
+  barcode                     String?                      @unique
+  shortDescription            String?
+  fullDescription             String?
+  regularPrice                Decimal                      @db.Decimal(10, 2)
+  salePrice                   Decimal?                     @db.Decimal(10, 2)
+  isActive                    Boolean                      @default(true)
   isBestSeller                Boolean                      @default(false)
   isNewArrival                Boolean                      @default(false)
   isPromotion                 Boolean                      @default(false)
   seoTitle                    String?
   seoDescription              String?
   seoKeywords                 String?
-  brandId                     String?
-  brand                       Brand?                       @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  images                      ProductImage[]
-  variants                    ProductVariant[]
-  categories                  ProductCategory[]
-  tags                        ProductTag[]
-  homepageSections            HomepageSectionProduct[]
+  lastRestockedAt             DateTime?
+  lifecycleStatus             ProductLifecycleStatus       @default(DRAFT)
+  promotionStartsAt           DateTime?
+  promotionEndsAt             DateTime?
+  archivedAt                  DateTime?
+  archivedBy                  String?
   homepageProductSectionItems HomepageProductSectionItem[]
+  homepageSections            HomepageSectionProduct[]
+  inventoryMovements          InventoryMovement[]
+  orderItems                  OrderItem[]
+  brand                       Brand?                       @relation(fields: [brandId], references: [id])
+  categories                  ProductCategory[]
+  images                      ProductImage[]
   relatedProducts             ProductRelated[]             @relation("ProductRelatedProducts")
   relatedToProducts           ProductRelated[]             @relation("ProductRelatedToProducts")
-  orderItems                  OrderItem[]
-  createdAt                   DateTime                     @default(now())
-  updatedAt                   DateTime                     @updatedAt
+  tags                        ProductTag[]
+  variants                    ProductVariant[]
 
   @@index([name])
   @@index([sku])
@@ -204,20 +158,26 @@ model Product {
   @@index([status])
   @@index([price])
   @@index([isActive, isFeatured, isBestSeller, isNewArrival, isPromotion])
+  @@index([lifecycleStatus, updatedAt])
+  @@index([archivedAt])
+  @@index([isPromotion, promotionStartsAt, promotionEndsAt])
+  @@index([barcode(ops: raw("gin_trgm_ops"))], map: "Product_barcode_trgm_idx", type: Gin)
+  @@index([name(ops: raw("gin_trgm_ops"))], map: "Product_name_trgm_idx", type: Gin)
+  @@index([sku(ops: raw("gin_trgm_ops"))], map: "Product_sku_trgm_idx", type: Gin)
 }
 
 model ProductImage {
   id        String          @id @default(cuid())
   productId String
-  variantId String?
-  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   url       String
   altText   String?
   sortOrder Int             @default(0)
-  isPrimary Boolean         @default(false)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
+  variantId String?
+  isPrimary Boolean         @default(false)
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@index([productId, sortOrder])
   @@index([variantId, sortOrder])
@@ -226,10 +186,9 @@ model ProductImage {
 model ProductVariant {
   id           String         @id @default(cuid())
   productId    String
-  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   title        String
   sku          String         @unique
-  barcode      String?
+  barcode      String?        @unique
   option1Name  String?
   option1Value String?
   option2Name  String?
@@ -241,9 +200,10 @@ model ProductVariant {
   stock        Int            @default(0)
   isActive     Boolean        @default(true)
   sortOrder    Int            @default(0)
-  images       ProductImage[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  images       ProductImage[]
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, sortOrder])
   @@index([isActive, stock])
@@ -252,9 +212,9 @@ model ProductVariant {
 model ProductRelated {
   productId        String
   relatedProductId String
+  createdAt        DateTime @default(now())
   product          Product  @relation("ProductRelatedProducts", fields: [productId], references: [id], onDelete: Cascade)
   relatedProduct   Product  @relation("ProductRelatedToProducts", fields: [relatedProductId], references: [id], onDelete: Cascade)
-  createdAt        DateTime @default(now())
 
   @@id([productId, relatedProductId])
   @@index([relatedProductId])
@@ -263,9 +223,9 @@ model ProductRelated {
 model ProductCategory {
   productId  String
   categoryId String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   assignedAt DateTime @default(now())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([productId, categoryId])
   @@index([categoryId])
@@ -276,9 +236,9 @@ model Tag {
   title       String
   slug        String       @unique
   description String?
-  products    ProductTag[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  products    ProductTag[]
 
   @@index([title])
 }
@@ -286,9 +246,9 @@ model Tag {
 model ProductTag {
   productId  String
   tagId      String
+  assignedAt DateTime @default(now())
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  assignedAt DateTime @default(now())
 
   @@id([productId, tagId])
   @@index([tagId])
@@ -315,65 +275,404 @@ model PromoCode {
 }
 
 model Order {
-  id                       String        @id @default(cuid())
-  orderNumber              String        @unique
+  id                       String                 @id @default(cuid())
+  orderNumber              String                 @unique
   userId                   String?
-  user                     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   clerkUserId              String?
   customerName             String
   email                    String
-  currency                 String        @default("MAD")
-  status                   OrderStatus   @default(pending)
-  paymentStatus            PaymentStatus @default(pending)
-  paymentMethod            PaymentMethod @default(cmi_card)
-  totalPrice               Decimal       @db.Decimal(10, 2)
-  amountDiscount           Decimal       @default(0) @db.Decimal(10, 2)
+  currency                 String                 @default("MAD")
+  status                   OrderStatus            @default(pending)
+  paymentStatus            PaymentStatus          @default(pending)
+  paymentMethod            PaymentMethod          @default(cmi_card)
+  totalPrice               Decimal                @db.Decimal(10, 2)
+  amountDiscount           Decimal                @default(0) @db.Decimal(10, 2)
   promoCode                String?
-  promoDiscount            Decimal       @default(0) @db.Decimal(10, 2)
-  orderDate                DateTime      @default(now())
-  statusChangedAt          DateTime      @default(now())
+  promoDiscount            Decimal                @default(0) @db.Decimal(10, 2)
+  orderDate                DateTime               @default(now())
   installmentMonths        Int?
-  installmentMonthlyAmount Decimal?      @db.Decimal(10, 2)
+  installmentMonthlyAmount Decimal?               @db.Decimal(10, 2)
   shippingName             String?
   shippingPhone            String?
   shippingAddress          String?
   shippingCity             String?
   shippingState            String?
   shippingZip              String?
+  invoiceId                String?
+  invoiceNumber            String?
+  invoiceHostedUrl         String?
+  stripeCheckoutSessionId  String?                @unique
+  stripeCustomerId         String?
+  stripePaymentIntentId    String?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
   deliveryCompany          String?
   deliveryPersonName       String?
   driverPhoneNumber        String?
   trackingNumber           String?
-  deliveryStatus           DeliveryStatus @default(not_assigned)
-  invoiceId                String?
-  invoiceNumber            String?
-  invoiceHostedUrl         String?
-  stripeCheckoutSessionId  String?       @unique
-  stripeCustomerId         String?
-  stripePaymentIntentId    String?
+  deliveryStatus           DeliveryStatus         @default(not_assigned)
+  statusChangedAt          DateTime               @default(now())
+  fulfillmentStatus        FulfillmentStatus      @default(to_prepare)
+  confirmationRequired     Boolean                @default(false)
+  confirmedAt              DateTime?
+  preparationStartedAt     DateTime?
+  preparedAt               DateTime?
+  shippedAt                DateTime?
+  deliveredAt              DateTime?
+  estimatedDeliveryAt      DateTime?
+  version                  Int                    @default(0)
+  qualityIssues            CustomerQualityIssue[]
+  inventoryMovements       InventoryMovement[]
+  loyaltyRefundEvents      LoyaltyRefundEvent[]
+  loyaltyTransactions      LoyaltyTransaction[]
+  user                     User?                  @relation(fields: [userId], references: [id])
+  events                   OrderEvent[]
   items                    OrderItem[]
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
+  notes                    OrderNote[]
+  returns                  OrderReturn[]
 
   @@index([clerkUserId, orderDate])
   @@index([status, paymentStatus])
+  @@index([fulfillmentStatus, orderDate])
   @@index([deliveryStatus, orderDate])
   @@index([statusChangedAt])
   @@index([email])
+  @@index([customerName])
+  @@index([shippingPhone])
+  @@index([shippingCity])
+  @@index([trackingNumber])
+}
+
+model InventoryMovement {
+  id               String                  @id @default(cuid())
+  productId        String
+  previousQuantity Int
+  quantityDelta    Int
+  newQuantity      Int
+  reason           InventoryMovementReason
+  note             String?
+  actorUserId      String?
+  actorEmail       String?
+  actorName        String?
+  relatedOrderId   String?
+  idempotencyKey   String?                 @unique
+  createdAt        DateTime                @default(now())
+  product          Product                 @relation(fields: [productId], references: [id])
+  relatedOrder     Order?                  @relation(fields: [relatedOrderId], references: [id])
+
+  @@index([productId, createdAt])
+  @@index([relatedOrderId, createdAt])
+  @@index([reason, createdAt])
+}
+
+model OrderEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  type        String
+  title       String
+  description String?
+  actorUserId String?
+  actorEmail  String?
+  actorName   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@index([type, createdAt])
+}
+
+model OrderNote {
+  id          String   @id @default(cuid())
+  orderId     String
+  content     String
+  createdBy   String
+  actorUserId String?
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+model OrderReturn {
+  id           String       @id @default(cuid())
+  orderId      String
+  status       ReturnStatus @default(requested)
+  reason       String
+  itemSnapshot Json?
+  refundStatus String?
+  refundAmount Decimal?     @db.Decimal(10, 2)
+  refundedAt   DateTime?
+  requestedBy  String?
+  reviewedBy   String?
+  receivedAt   DateTime?
+  inspectedAt  DateTime?
+  closedAt     DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  order        Order        @relation(fields: [orderId], references: [id])
+
+  @@index([orderId, status])
+  @@index([status, createdAt])
+}
+
+model OrderSlaPolicy {
+  id                String        @id @default(cuid())
+  name              String
+  stage             OrderSlaStage
+  durationHours     Int
+  workingDays       Boolean       @default(true)
+  applicableCarrier String?
+  applicableZone    String?
+  priority          Int           @default(0)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([stage, isActive, priority])
+}
+
+model LoyaltyProgramSettings {
+  id                          String   @id @default("default")
+  statusValidityMonths        Int      @default(12)
+  pointExpirationMonths       Int      @default(18)
+  expirationAlertDays         Int[]    @default([60, 30, 7])
+  separateStatusAndPoints     Boolean  @default(true)
+  newCustomerDays             Int      @default(30)
+  activeCustomerDays          Int      @default(90)
+  inactiveCustomerDays        Int      @default(365)
+  loyalMinimumOrders          Int      @default(3)
+  loyalMinimumRevenue         Decimal  @default(1000) @db.Decimal(10, 2)
+  reengagementCycleMultiplier Decimal  @default(1.5) @db.Decimal(5, 2)
+  minimumOrdersForCycle       Int      @default(3)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
+model LoyaltyTierRule {
+  id                  String      @id @default(cuid())
+  tier                LoyaltyTier @unique
+  pointsPer100Mad     Int
+  revenueThreshold    Decimal     @db.Decimal(10, 2)
+  qualificationMonths Int         @default(12)
+  isActive            Boolean     @default(true)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([isActive, revenueThreshold])
+}
+
+model LoyaltyTransaction {
+  id                    String                   @id @default(cuid())
+  userId                String
+  orderId               String?
+  rewardRedemptionId    String?
+  type                  LoyaltyTransactionType
+  amount                Int
+  reason                String
+  previousBalance       Int
+  newBalance            Int
+  expiresAt             DateTime?
+  createdBy             String?
+  idempotencyKey        String?                  @unique
+  metadata              Json?
+  reversedTransactionId String?
+  createdAt             DateTime                 @default(now())
+  refundEvent           LoyaltyRefundEvent?
+  order                 Order?                   @relation(fields: [orderId], references: [id])
+  reversedTransaction   LoyaltyTransaction?      @relation("LoyaltyReversals", fields: [reversedTransactionId], references: [id])
+  reversals             LoyaltyTransaction[]     @relation("LoyaltyReversals")
+  rewardRedemption      LoyaltyRewardRedemption? @relation(fields: [rewardRedemptionId], references: [id])
+  user                  User                     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([orderId, type])
+  @@index([expiresAt])
+  @@index([rewardRedemptionId])
+}
+
+model LoyaltyRefundEvent {
+  id                   String              @id @default(cuid())
+  orderId              String
+  externalEventId      String
+  refundedAmount       Decimal             @db.Decimal(10, 2)
+  loyaltyTransactionId String?             @unique
+  metadata             Json?
+  createdAt            DateTime            @default(now())
+  loyaltyTransaction   LoyaltyTransaction? @relation(fields: [loyaltyTransactionId], references: [id])
+  order                Order               @relation(fields: [orderId], references: [id])
+
+  @@unique([orderId, externalEventId])
+  @@index([orderId, createdAt])
+}
+
+model LoyaltyReward {
+  id              String                    @id @default(cuid())
+  name            String
+  description     String?
+  type            LoyaltyRewardType
+  pointsCost      Int
+  monetaryValue   Decimal?                  @db.Decimal(10, 2)
+  percentageValue Int?
+  isActive        Boolean                   @default(true)
+  archivedAt      DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  redemptions     LoyaltyRewardRedemption[]
+
+  @@index([isActive, pointsCost])
+}
+
+model LoyaltyRewardRedemption {
+  id                 String                  @id @default(cuid())
+  userId             String
+  rewardId           String
+  status             LoyaltyRedemptionStatus @default(issued)
+  pointsCostSnapshot Int
+  rewardSnapshot     Json
+  idempotencyKey     String                  @unique
+  issuedBy           String?
+  appliedAt          DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  reward             LoyaltyReward           @relation(fields: [rewardId], references: [id])
+  user               User                    @relation(fields: [userId], references: [id])
+  transactions       LoyaltyTransaction[]
+
+  @@index([userId, createdAt])
+  @@index([rewardId, status])
+}
+
+model CustomerTag {
+  id          String                  @id @default(cuid())
+  name        String                  @unique
+  color       String                  @default("blue")
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  assignments CustomerTagAssignment[]
+}
+
+model CustomerTagAssignment {
+  userId     String
+  tagId      String
+  assignedBy String?
+  assignedAt DateTime    @default(now())
+  tag        CustomerTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, tagId])
+  @@index([tagId, assignedAt])
+}
+
+model CustomerNote {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model CustomerQualityIssue {
+  id                String               @id @default(cuid())
+  issueKey          String               @unique
+  userId            String?
+  orderId           String?
+  type              QualityIssueType
+  severity          QualityIssueSeverity
+  status            QualityIssueStatus   @default(open)
+  description       String
+  recommendedAction String
+  metadata          Json?
+  detectedAt        DateTime             @default(now())
+  reviewedAt        DateTime?
+  reviewedBy        String?
+  resolvedAt        DateTime?
+  order             Order?               @relation(fields: [orderId], references: [id])
+  user              User?                @relation(fields: [userId], references: [id])
+
+  @@index([status, severity, detectedAt])
+  @@index([userId, status])
+  @@index([orderId])
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actorEmail  String?
+  action      String
+  entity      String
+  entityId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+}
+
+model CustomerExportLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  exportedBy String
+  format     String   @default("csv")
+  rowCount   Int
+  filters    Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([exportedBy, createdAt])
+  @@index([userId, createdAt])
+}
+
+model CustomerPrivacyRequest {
+  id          String               @id @default(cuid())
+  userId      String
+  type        PrivacyRequestType
+  status      PrivacyRequestStatus @default(requested)
+  reason      String?
+  requestedBy String
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  completedAt DateTime?
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+model CustomerConsent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  granted   Boolean
+  source    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
 }
 
 model OrderItem {
   id                      String   @id @default(cuid())
   orderId                 String
-  order                   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId               String?
-  product                 Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   productNameSnapshot     String
   productPriceSnapshot    Decimal  @db.Decimal(10, 2)
   productImageUrlSnapshot String?
   quantity                Int
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+  order                   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product                 Product? @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
@@ -429,24 +728,28 @@ model StorefrontSettings {
 }
 
 model HomepageSection {
-  id        String                   @id @default(cuid())
-  key       String                   @unique
-  type      HomepageSectionType
-  title     String
-  subtitle  String?
-  isActive  Boolean                  @default(true)
-  order     Int                      @default(0)
-  layout    String?
-  theme     String?
-  ctaLabel  String?
-  ctaLink   String?
-  limit     Int?
-  config    Json?
-  products  HomepageSectionProduct[]
-  createdAt DateTime                 @default(now())
-  updatedAt DateTime                 @updatedAt
+  id         String                   @id @default(cuid())
+  key        String                   @unique
+  type       HomepageSectionType
+  title      String
+  subtitle   String?
+  isActive   Boolean                  @default(true)
+  order      Int                      @default(0)
+  layout     String?
+  theme      String?
+  ctaLabel   String?
+  ctaLink    String?
+  limit      Int?
+  config     Json?
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+  archivedAt DateTime?
+  startsAt   DateTime?
+  endsAt     DateTime?
+  products   HomepageSectionProduct[]
 
-  @@index([isActive, order])
+  @@index([isActive, archivedAt, order])
+  @@index([startsAt, endsAt])
   @@index([type])
 }
 
@@ -454,9 +757,9 @@ model HomepageSectionProduct {
   sectionId String
   productId String
   sortOrder Int             @default(0)
-  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime        @default(now())
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@id([sectionId, productId])
   @@index([sectionId, sortOrder])
@@ -470,9 +773,9 @@ model HomepageProductSection {
   slug      String                       @unique
   isActive  Boolean                      @default(true)
   order     Int                          @default(0)
-  items     HomepageProductSectionItem[]
   createdAt DateTime                     @default(now())
   updatedAt DateTime                     @updatedAt
+  items     HomepageProductSectionItem[]
 
   @@index([isActive, order])
 }
@@ -482,10 +785,10 @@ model HomepageProductSectionItem {
   sectionId String
   productId String
   order     Int                    @default(0)
-  section   HomepageProductSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  product   Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime               @default(now())
   updatedAt DateTime               @updatedAt
+  product   Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  section   HomepageProductSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([sectionId, productId])
   @@index([sectionId, order])
@@ -493,33 +796,38 @@ model HomepageProductSectionItem {
 }
 
 model HomeHeroSlide {
-  id        String   @id @default(cuid())
-  badge     String?
-  title     String
-  subtitle  String?
-  ctaLabel  String?
-  ctaHref   String?
-  imageUrl  String?
-  altText   String?
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(cuid())
+  badge      String?
+  title      String
+  subtitle   String?
+  ctaLabel   String?
+  ctaHref    String?
+  imageUrl   String?
+  altText    String?
+  sortOrder  Int       @default(0)
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
+  startsAt   DateTime?
+  endsAt     DateTime?
 
-  @@index([isActive, sortOrder])
+  @@index([isActive, archivedAt, sortOrder])
+  @@index([startsAt, endsAt])
 }
 
 model HomeTrustItem {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   description String
   icon        String
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime?
 
-  @@index([isActive, sortOrder])
+  @@index([isActive, archivedAt, sortOrder])
 }
 
 model SiteLink {
@@ -531,21 +839,42 @@ model SiteLink {
   openInNewTab Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  isActive     Boolean       @default(true)
+  archivedAt   DateTime?
 
-  @@index([group, sortOrder])
+  @@index([group, isActive, archivedAt, sortOrder])
 }
 
 model SiteSocialLink {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   platform     String
   title        String
   href         String
-  sortOrder    Int      @default(0)
-  openInNewTab Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  sortOrder    Int       @default(0)
+  openInNewTab Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  isActive     Boolean   @default(true)
+  archivedAt   DateTime?
 
-  @@index([sortOrder])
+  @@index([isActive, archivedAt, sortOrder])
+}
+
+/// Versioned Homepage workspace. The public storefront keeps reading the
+/// normalized content tables; `draft` is applied to them only by an explicit,
+/// atomic publish operation.
+model HomepageWorkspace {
+  id               String    @id @default("default")
+  draft            Json
+  published        Json
+  draftVersion     Int       @default(1)
+  publishedVersion Int       @default(1)
+  draftUpdatedAt   DateTime  @default(now())
+  draftUpdatedBy   String?
+  publishedAt      DateTime?
+  publishedBy      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 model NewsletterSubscription {
@@ -556,4 +885,201 @@ model NewsletterSubscription {
   updatedAt DateTime @updatedAt
 
   @@index([isActive, createdAt])
+}
+
+enum ProductStatus {
+  new
+  hot
+  sale
+}
+
+enum ProductLifecycleStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum InventoryMovementReason {
+  INITIAL_BALANCE
+  ORDER
+  ORDER_CANCELLED
+  MANUAL_ADJUSTMENT
+  RESTOCK
+  RETURN
+  DAMAGE
+  CORRECTION
+  IMPORT
+}
+
+enum OrderStatus {
+  pending
+  processing
+  paid
+  shipped
+  out_for_delivery
+  delivered
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  partial
+  paid
+  failed
+  refunded
+}
+
+enum DeliveryStatus {
+  not_assigned
+  preparing
+  in_transit
+  out_for_delivery
+  delivered
+  delayed
+  failed
+  returned
+}
+
+enum FulfillmentStatus {
+  to_prepare
+  preparing
+  ready
+  shipped
+  cancelled
+}
+
+enum ReturnStatus {
+  requested
+  approved
+  received
+  inspected
+  closed
+  rejected
+}
+
+enum OrderSlaStage {
+  preparation
+  shipping
+  delivery
+}
+
+enum PaymentMethod {
+  cod
+  cmi_card
+  installments
+}
+
+enum PromoDiscountType {
+  percentage
+  fixed
+}
+
+enum LoyaltyTier {
+  bronze
+  silver
+  gold
+}
+
+enum CustomerActivitySegment {
+  NEW
+  ACTIVE
+  LOYAL
+  TO_REENGAGE
+  NO_PURCHASE
+  INACTIVE
+}
+
+enum LoyaltyTransactionType {
+  earned
+  redeemed
+  expired
+  manual_adjustment
+  refund_reversal
+  cancellation_reversal
+  bonus
+  birthday_bonus
+  opening_balance
+  other
+}
+
+enum LoyaltyRewardType {
+  fixed_discount
+  free_delivery
+  percentage_discount
+  gift
+  custom
+}
+
+enum LoyaltyRedemptionStatus {
+  issued
+  applied
+  cancelled
+  expired
+}
+
+enum QualityIssueType {
+  pointsWithoutRevenue
+  deliveredOrderWithoutPoints
+  pointsOnCancelledOrder
+  potentialDuplicate
+  invalidEmail
+  missingPhone
+}
+
+enum QualityIssueSeverity {
+  info
+  warning
+  critical
+}
+
+enum QualityIssueStatus {
+  open
+  reviewed
+  resolved
+  ignored
+}
+
+enum PrivacyRequestType {
+  export
+  anonymize
+  delete
+}
+
+enum PrivacyRequestStatus {
+  requested
+  under_review
+  completed
+  rejected
+}
+
+enum SiteLinkGroup {
+  header
+  footer_quick
+  footer_legal
+}
+
+enum HomepageSectionType {
+  hero
+  product_list
+  category_list
+  brand_list
+  reassurance
+  newsletter
+  custom_banner
+  links_group
+  social_links
+  custom_html
+  rich_text
+}
+
+enum HomepageProductSourceType {
+  manual_selection
+  by_category
+  by_brand
+  by_tag
+  discounted
+  best_sellers
+  newest
+  featured
 }

@@ -36,6 +36,7 @@ export const upsertAppUser = async (identity: AppUserIdentity) =>
       loyaltyCardNumber: buildLoyaltyCardNumber(identity.clerkUserId),
       loyaltyPoints: 0,
       loyaltyTier: "bronze",
+      activitySegment: "NEW",
       installmentsEligible: false,
     },
   });

@@ -88,7 +88,7 @@ export const buildAdminSidebarItems = (metrics: {
     label: "Marques",
     description: "Marques, logos et partenaires du catalogue",
     href: "/admin/brands",
-    actionHref: "/admin/brands#new-brand",
+    actionHref: "/admin/brands?drawer=create",
     actionLabel: "Ajouter une marque",
     icon: Store,
   },
@@ -105,7 +105,7 @@ export const buildAdminSidebarItems = (metrics: {
   },
   {
     id: "clients",
-    label: "Clients",
+    label: "Clients & fidélité",
     description: "Profils, fidélité, points et historique commandes",
     href: "/admin/clients",
     actionHref: "/admin/clients",

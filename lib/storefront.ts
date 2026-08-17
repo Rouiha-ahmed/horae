@@ -4,8 +4,14 @@ import { unstable_cache } from "next/cache";
 import { getAdminDataTag } from "@/lib/admin";
 import { mapBrand, mapCategory, mapProduct } from "@/lib/data/mappers";
 import { type HomepageDynamicSection } from "@/lib/homepage-sections";
+import { buildHomepageSnapshotShell } from "@/lib/homepage-preview";
+import { getPublishedHomepageRenderData } from "@/lib/homepage-workspace";
 import { sanitizePublicImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
+import {
+  activeProductPromotionWhere,
+  sellableProductWhere,
+} from "@/lib/products/storefront-rules";
 import { buildDynamicHomepageSections } from "@/lib/storefront-homepage-builder";
 import {
   getStorefrontCustomHomepageProductSections,
@@ -22,10 +28,16 @@ const productSelect = {
   slug: true,
   description: true,
   price: true,
+  regularPrice: true,
+  salePrice: true,
   discount: true,
   stock: true,
   status: true,
+  isActive: true,
   isFeatured: true,
+  isPromotion: true,
+  promotionStartsAt: true,
+  promotionEndsAt: true,
   images: {
     orderBy: {
       sortOrder: "asc" as const,
@@ -46,6 +58,7 @@ const productSelect = {
     },
   },
   categories: {
+    where: { category: { isActive: true, archivedAt: null } },
     include: {
       category: {
         select: {
@@ -213,6 +226,7 @@ const storefrontSchemaEntities = [
   "NewsletterSubscription",
   "HomepageSection",
   "HomepageSectionProduct",
+  "HomepageWorkspace",
   "HomepageProductSection",
   "HomepageProductSectionItem",
   "Tag",
@@ -492,17 +506,25 @@ const fetchStorefrontShellData = async (): Promise<StorefrontShellData> => {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         select: {
           id: true, title: true, href: true, group: true,
-          sortOrder: true, openInNewTab: true,
+          sortOrder: true, openInNewTab: true, isActive: true, archivedAt: true,
         },
       }),
       prisma.siteSocialLink.findMany({
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         select: {
           id: true, platform: true, title: true, href: true,
-          sortOrder: true, openInNewTab: true,
+          sortOrder: true, openInNewTab: true, isActive: true, archivedAt: true,
         },
       }),
       prisma.category.findMany({
+        where: {
+          isActive: true,
+          archivedAt: null,
+          OR: [
+            { parentId: null },
+            { parent: { is: { isActive: true, archivedAt: null } } },
+          ],
+        },
         orderBy: [{ range: "asc" }, { title: "asc" }],
         select: {
           id: true,
@@ -512,17 +534,29 @@ const fetchStorefrontShellData = async (): Promise<StorefrontShellData> => {
           description: true,
           featured: true,
           imageUrl: true,
-          _count: { select: { products: true } },
+          parentId: true,
+          _count: {
+            select: {
+              products: { where: { product: { is: sellableProductWhere } } },
+            },
+          },
         },
-        take: 20, // top 20 for nav; footer uses first 10 (sliced below)
       }),
     ]);
 
-  const navigationCategoriesRaw = allCategoriesRaw;
-  const footerCategoriesRaw = allCategoriesRaw.slice(0, 10);
+  const navigationCategoriesRaw = allCategoriesRaw
+    .filter((category) => !category.parentId)
+    .flatMap((root) => [
+      root,
+      ...allCategoriesRaw.filter((category) => category.parentId === root.id),
+    ])
+    .slice(0, 20);
+  const footerCategoriesRaw = navigationCategoriesRaw.slice(0, 10);
 
   const settings = normalizeSettings(settingsRecord);
-  const linksByGroup = rawLinks.reduce<
+  const activeLinks = rawLinks.filter((link) => link.isActive && !link.archivedAt);
+  const activeSocialLinks = rawSocialLinks.filter((link) => link.isActive && !link.archivedAt);
+  const linksByGroup = activeLinks.reduce<
     Record<"header" | "footer_quick" | "footer_legal", StorefrontLink[]>
   >(
     (accumulator, link) => {
@@ -539,15 +573,17 @@ const fetchStorefrontShellData = async (): Promise<StorefrontShellData> => {
 
   return {
     settings,
-    headerLinks: linksByGroup.header.length ? linksByGroup.header : fallbackHeaderLinks(),
-    footerQuickLinks: linksByGroup.footer_quick.length
+    headerLinks: rawLinks.some((link) => link.group === "header")
+      ? linksByGroup.header
+      : fallbackHeaderLinks(),
+    footerQuickLinks: rawLinks.some((link) => link.group === "footer_quick")
       ? linksByGroup.footer_quick
       : fallbackFooterQuickLinks(),
-    footerLegalLinks: linksByGroup.footer_legal.length
+    footerLegalLinks: rawLinks.some((link) => link.group === "footer_legal")
       ? linksByGroup.footer_legal
       : fallbackFooterLegalLinks(),
     socialLinks: rawSocialLinks.length
-      ? rawSocialLinks.map((item) => ({
+      ? activeSocialLinks.map((item) => ({
           id: item.id,
           platform: item.platform,
           title: item.title,
@@ -572,7 +608,40 @@ const getCachedStorefrontShellData = unstable_cache(
 
 const fetchStorefrontHomeData = async (): Promise<StorefrontHomeData> => {
   const shell = await getCachedStorefrontShellData();
+
+  try {
+    const published = await getPublishedHomepageRenderData();
+    const publishedShell = buildHomepageSnapshotShell(published.snapshot, shell);
+
+    return {
+      ...publishedShell,
+      heroSlides: published.snapshot.heroSlides
+        .filter((slide) => slide.isActive && !slide.archivedAt)
+        .sort((left, right) => left.sortOrder - right.sortOrder),
+      featuredCategories: [],
+      promotionalProducts: [],
+      bestSellerProducts: [],
+      newArrivalProducts: [],
+      brands: [],
+      trustItems: published.snapshot.trustItems
+        .filter((item) => item.isActive && !item.archivedAt)
+        .sort((left, right) => left.sortOrder - right.sortOrder),
+      dynamicSections: published.sections,
+      hasDynamicSections: true,
+      customProductSections: [],
+      hasError: false,
+    };
+  } catch (error) {
+    if (isStorefrontSchemaError(error)) {
+      console.warn("Homepage workspace is not available yet, using normalized storefront data.");
+    } else {
+      console.error("Failed to resolve the published Homepage workspace:", error);
+    }
+  }
+
   const settings = shell.settings;
+  const now = new Date();
+  const commercialPeriodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const [
     rawHeroSlides,
@@ -586,20 +655,32 @@ const fetchStorefrontHomeData = async (): Promise<StorefrontHomeData> => {
     prisma.homeHeroSlide.findMany({
       where: {
         isActive: true,
+        archivedAt: null,
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+        ],
       },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     }),
     prisma.homeTrustItem.findMany({
       where: {
         isActive: true,
+        archivedAt: null,
       },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     }),
     prisma.category.findMany({
       where: {
         featured: true,
+        isActive: true,
+        archivedAt: null,
+        OR: [
+          { parentId: null },
+          { parent: { is: { isActive: true, archivedAt: null } } },
+        ],
       },
-      orderBy: [{ title: "asc" }],
+      orderBy: [{ range: "asc" }, { title: "asc" }],
       select: {
         id: true,
         title: true,
@@ -610,7 +691,9 @@ const fetchStorefrontHomeData = async (): Promise<StorefrontHomeData> => {
         imageUrl: true,
         _count: {
           select: {
-            products: true,
+            products: {
+              where: { product: { is: sellableProductWhere } },
+            },
           },
         },
       },
@@ -618,27 +701,25 @@ const fetchStorefrontHomeData = async (): Promise<StorefrontHomeData> => {
     }),
     prisma.product.findMany({
       where: {
-        OR: [
-          {
-            discount: {
-              gt: 0,
-            },
-          },
-          {
-            status: "sale",
-          },
-        ],
+        ...sellableProductWhere,
+        stock: { gt: 0 },
+        ...activeProductPromotionWhere(now),
       },
       orderBy: [{ discount: "desc" }, { updatedAt: "desc" }],
       select: productSelect,
       take: settings.promotionsLimit,
     }),
     prisma.product.findMany({
+      where: { ...sellableProductWhere, stock: { gt: 0 } },
       orderBy: [{ createdAt: "desc" }],
       select: productSelect,
       take: settings.newArrivalsLimit,
     }),
     prisma.brand.findMany({
+      where: {
+        isActive: true,
+        archivedAt: null,
+      },
       orderBy: [{ title: "asc" }],
       select: {
         id: true,
@@ -657,6 +738,8 @@ const fetchStorefrontHomeData = async (): Promise<StorefrontHomeData> => {
         },
         order: {
           paymentStatus: "paid",
+          status: "delivered",
+          orderDate: { gte: commercialPeriodStart },
         },
       },
       _sum: {
@@ -680,6 +763,8 @@ const fetchStorefrontHomeData = async (): Promise<StorefrontHomeData> => {
           id: {
             in: bestSellerIds,
           },
+          ...sellableProductWhere,
+          stock: { gt: 0 },
         },
         select: productSelect,
       })

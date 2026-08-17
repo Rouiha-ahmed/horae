@@ -1,373 +1,129 @@
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
-import {
-  adminCurrencyFormatter,
-  adminSurfaceClassName,
-  StatusPill,
-} from "@/components/admin/AdminPagePrimitives";
-import {
-  TIER_LABELS,
-  TIER_BENEFITS,
-  getPointsToNextTier,
-} from "@/lib/loyalty";
 import {
   ArrowLeft,
-  Award,
   Calendar,
-  CheckCircle2,
+  Clock3,
   Crown,
-  CreditCard,
-  Medal,
-  Package,
-  Shield,
+  Gift,
+  Mail,
+  MapPin,
+  Phone,
   ShoppingBag,
-  Sparkles,
-  TrendingUp,
+  Star,
+  Trophy,
+  UserRound,
+  WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+import CustomerProfileActions from "@/components/admin/clients/CustomerProfileActions";
+import RewardRedeemButton from "@/components/admin/clients/RewardRedeemButton";
+import { requireAdmin } from "@/lib/admin";
+import { TIER_LABELS } from "@/lib/loyalty";
+import { SEGMENT_LABELS, getCustomerDetail } from "@/lib/services/admin-customers";
 import { cn } from "@/lib/utils";
-import type { ElementType } from "react";
-import type { LoyaltyTier } from "@prisma/client";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> };
+const money = new Intl.NumberFormat("fr-MA", { style: "currency", currency: "MAD" });
+const date = new Intl.DateTimeFormat("fr-MA", { day: "2-digit", month: "short", year: "numeric" });
+const dateTime = new Intl.DateTimeFormat("fr-MA", { dateStyle: "medium", timeStyle: "short" });
+const surface = "rounded-[24px] border border-slate-200/80 bg-white shadow-[0_16px_50px_-42px_rgba(15,23,42,0.4)]";
 
-const TIER_STYLE: Record<
-  LoyaltyTier,
-  { gradient: string; text: string; icon: ElementType; ring: string; bar: string }
-> = {
-  bronze: {
-    gradient: "from-amber-500 via-orange-500 to-amber-600",
-    text:     "text-amber-100",
-    icon:     Shield,
-    ring:     "ring-amber-300/40",
-    bar:      "bg-amber-500",
-  },
-  silver: {
-    gradient: "from-slate-400 via-slate-500 to-slate-600",
-    text:     "text-slate-100",
-    icon:     Medal,
-    ring:     "ring-slate-300/40",
-    bar:      "bg-slate-400",
-  },
-  gold: {
-    gradient: "from-yellow-400 via-amber-400 to-yellow-500",
-    text:     "text-yellow-900",
-    icon:     Crown,
-    ring:     "ring-yellow-300/60",
-    bar:      "bg-yellow-400",
-  },
-};
-
-async function getClientDetail(id: string) {
+export default async function CustomerProfilePage({ params, searchParams }: Props) {
   await requireAdmin();
-
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id:                  true,
-      fullName:            true,
-      email:               true,
-      loyaltyCardNumber:   true,
-      loyaltyPoints:       true,
-      loyaltyTier:         true,
-      installmentsEligible: true,
-      createdAt:           true,
-      orders: {
-        select: {
-          id:            true,
-          orderNumber:   true,
-          status:        true,
-          paymentStatus: true,
-          paymentMethod: true,
-          totalPrice:    true,
-          orderDate:     true,
-          shippingCity:  true,
-          items: {
-            select: {
-              productNameSnapshot: true,
-              quantity:            true,
-              productPriceSnapshot: true,
-            },
-            take: 3,
-          },
-        },
-        orderBy: { orderDate: "desc" },
-      },
-    },
-  });
-
-  if (!user) notFound();
-
-  // Only count orders that are delivered AND paid
-  const settledOrders = user.orders.filter(
-    (o) => o.status === "delivered" && o.paymentStatus === "paid"
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const data = await getCustomerDetail(id);
+  if (!data) notFound();
+  const { user, metrics } = data;
+  const tab = new Set(["summary", "orders", "loyalty", "profile"]).has(query.tab || "") ? query.tab! : "summary";
+  const address = user.addresses[0] || null;
+  const initials = user.fullName.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase();
+  const tierProgress = data.nextTierThreshold
+    ? Math.min(100, Math.max(0, (metrics.qualifyingRevenue / data.nextTierThreshold) * 100))
+    : 100;
+  const nextRewardProgress = data.nextReward
+    ? Math.min(100, Math.max(0, (user.loyaltyPoints / data.nextReward.pointsCost) * 100))
+    : 100;
+  const earnedByOrder = new Map(
+    user.loyaltyTransactions
+      .filter((transaction) => transaction.orderId && transaction.type === "earned")
+      .map((transaction) => [transaction.orderId!, transaction.amount]),
   );
-  const totalSpent = settledOrders.reduce((s, o) => s + Number(o.totalPrice), 0);
-  const avgOrder   = settledOrders.length ? totalSpent / settledOrders.length : 0;
-  const paidOrders = settledOrders.length;
+  const tabs = [
+    { key: "summary", label: "Résumé" },
+    { key: "orders", label: "Commandes" },
+    { key: "loyalty", label: "Fidélité" },
+    { key: "profile", label: "Profil" },
+  ];
 
-  return { user, totalSpent, avgOrder, paidOrders };
+  return <div className="space-y-4">
+    <div className="flex items-center gap-2 text-xs text-slate-500"><Link href="/admin/clients" className="hover:text-blue-600">Clients &amp; fidélité</Link><span>›</span><Link href="/admin/clients/list" className="hover:text-blue-600">Clients</Link><span>›</span><span className="font-semibold text-slate-800">Fiche client</span></div>
+
+    <section className={`${surface} p-5`}>
+      <div className="grid gap-5 xl:grid-cols-[1.35fr_repeat(4,minmax(150px,.65fr))]">
+        <div className="flex items-start gap-4">
+          <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-2xl font-bold text-white"><span>{initials}</span><span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-amber-50 text-amber-600"><Crown className="h-4 w-4" /></span></div>
+          <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="text-xl font-bold text-[#0f1d42]">{user.fullName}</h1><span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">{TIER_LABELS[user.loyaltyTier]}</span><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-700">{SEGMENT_LABELS[user.activitySegment]}</span></div><p className="mt-2 flex items-center gap-2 text-xs text-slate-500"><Mail className="h-3.5 w-3.5" /> {user.email}</p>{address?.phone ? <p className="mt-1 flex items-center gap-2 text-xs text-slate-500"><Phone className="h-3.5 w-3.5" /> {address.phone}</p> : null}{address?.city ? <p className="mt-1 flex items-center gap-2 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" /> {address.city}, Maroc</p> : null}<p className="mt-2 text-[10px] text-slate-400">Client depuis le {date.format(user.createdAt)} · Carte {user.loyaltyCardNumber}</p>{user.loyaltySuspendedAt ? <p className="mt-2 rounded-lg bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700">Fidélité suspendue · {user.loyaltySuspensionReason}</p> : null}</div>
+        </div>
+        {[
+          { label: "Points disponibles", value: `${user.loyaltyPoints.toLocaleString("fr-MA")} pts`, helper: "Solde du grand livre", icon: Star, tone: "text-blue-600 bg-blue-50" },
+          { label: "Dépenses qualifiantes", value: money.format(metrics.qualifyingRevenue), helper: "12 derniers mois", icon: ShoppingBag, tone: "text-[#162e6e] bg-slate-50" },
+          { label: "Statut actuel", value: TIER_LABELS[user.loyaltyTier], helper: user.loyaltyTierValidUntil ? `Valide jusqu’au ${date.format(user.loyaltyTierValidUntil)}` : data.nextTier ? `Prochain : ${TIER_LABELS[data.nextTier]}` : "Niveau maximal", icon: Crown, tone: "text-amber-600 bg-amber-50" },
+          { label: "Points à expirer", value: `${metrics.expiringPoints.toLocaleString("fr-MA")} pts`, helper: `Dans ${Math.max(...data.settings.expirationAlertDays)} jours`, icon: Clock3, tone: "text-orange-600 bg-orange-50" },
+        ].map(({ label, value, helper, icon: Icon, tone }) => <article key={label} className="rounded-[20px] border border-slate-200 p-4"><span className={cn("flex h-9 w-9 items-center justify-center rounded-xl", tone)}><Icon className="h-4 w-4" /></span><p className="mt-4 text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 text-lg font-bold text-[#0f1d42]">{value}</p><p className="mt-2 text-[10px] text-slate-400">{helper}</p></article>)}
+      </div>
+    </section>
+
+    <section className={`${surface} grid gap-5 p-5 lg:grid-cols-2`}>
+      <div>
+        <div className="flex justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          <span>Progression vers {data.nextTier ? TIER_LABELS[data.nextTier] : "le statut maximal"}</span>
+          <span>{money.format(metrics.qualifyingRevenue)}{data.nextTierThreshold ? ` / ${money.format(data.nextTierThreshold)}` : ""}</span>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-500" style={{ width: `${tierProgress}%` }} />
+        </div>
+      </div>
+      <div className="border-t border-slate-100 pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><Gift className="h-4 w-4" /></span>
+          <div className="flex-1"><p className="text-[10px] text-slate-400">Prochaine récompense</p><p className="text-xs font-semibold">{data.nextReward?.name || "Toutes les récompenses accessibles"}</p></div>
+          <strong className="text-xs text-slate-500">{data.nextReward ? `${Math.max(0, data.nextReward.pointsCost - user.loyaltyPoints)} pts restants` : "100 %"}</strong>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-violet-500" style={{ width: `${nextRewardProgress}%` }} />
+        </div>
+      </div>
+    </section>
+
+    <nav className="flex gap-1 overflow-x-auto rounded-[20px] border border-slate-200 bg-white p-1.5">{tabs.map((item) => <Link key={item.key} href={`/admin/clients/${id}?tab=${item.key}`} className={cn("shrink-0 rounded-xl px-4 py-2 text-xs font-semibold", tab === item.key ? "bg-[#162e6e] text-white" : "text-slate-500 hover:bg-slate-50")}>{item.label}</Link>)}</nav>
+
+    <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
+      <main className="space-y-4">
+        {tab === "summary" ? <>
+          <div className="grid gap-4 lg:grid-cols-2"><RewardsPanel data={data} /><LedgerPanel transactions={user.loyaltyTransactions.slice(0, 8)} /></div>
+          <OrdersPanel orders={user.orders.slice(0, 6)} earnedByOrder={earnedByOrder} />
+        </> : null}
+        {tab === "orders" ? <OrdersPanel orders={user.orders} earnedByOrder={earnedByOrder} /> : null}
+        {tab === "loyalty" ? <><RewardsPanel data={data} /><LedgerPanel transactions={user.loyaltyTransactions} /></> : null}
+        {tab === "profile" ? <section className={`${surface} p-5`}><h2 className="text-sm font-bold text-[#0f1d42]">Profil complet</h2><div className="mt-4 grid gap-3 sm:grid-cols-2">{[["Nom", user.fullName], ["E-mail", user.email], ["Téléphone", address?.phone || "Non renseigné"], ["Ville", address?.city || "Non renseignée"], ["Carte fidélité", user.loyaltyCardNumber], ["Création", dateTime.format(user.createdAt)], ["Paiement en plusieurs fois", user.installmentsEligible ? "Autorisé" : "Non autorisé"], ["Dernière mise à jour", dateTime.format(user.updatedAt)]].map(([label, value]) => <div key={label} className="rounded-2xl bg-slate-50 p-4"><p className="text-[10px] uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 text-xs font-semibold text-slate-800">{value}</p></div>)}</div>{address ? <div className="mt-4 rounded-2xl border border-slate-200 p-4"><p className="text-xs font-semibold">Adresse principale</p><p className="mt-2 text-xs leading-5 text-slate-500">{address.name}<br />{address.address}<br />{address.city} {address.zip}<br />{address.state}</p></div> : null}</section> : null}
+      </main>
+      <aside className="space-y-4"><CustomerProfileActions user={{ id: user.id, fullName: user.fullName, email: user.email, suspended: Boolean(user.loyaltySuspendedAt) }} /><section className={`${surface} p-4`}><div className="flex items-center justify-between"><h2 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Notes internes</h2><span className="text-[10px] text-slate-400">{user.notes.length}</span></div><div className="mt-2 divide-y divide-slate-100">{user.notes.length ? user.notes.slice(0, 5).map((note) => <article key={note.id} className="py-3"><p className="text-xs leading-5 text-slate-600">{note.content}</p><p className="mt-2 text-[9px] text-slate-400">{note.createdBy} · {dateTime.format(note.createdAt)}</p></article>) : <p className="py-8 text-center text-xs text-slate-400">Aucune note.</p>}</div></section></aside>
+    </div>
+    <Link href="/admin/clients/list" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-blue-600"><ArrowLeft className="h-4 w-4" /> Retour à la liste</Link>
+  </div>;
 }
 
-export default async function AdminClientDetailPage({ params }: Props) {
-  const { id } = await params;
-  const { user, totalSpent, avgOrder, paidOrders } = await getClientDetail(id);
+type Detail = NonNullable<Awaited<ReturnType<typeof getCustomerDetail>>>;
 
-  const style   = TIER_STYLE[user.loyaltyTier];
-  const TierIcon = style.icon;
-  const { nextTier, pointsNeeded, progressPct } = getPointsToNextTier(user.loyaltyPoints);
-  const benefits = TIER_BENEFITS[user.loyaltyTier];
+function RewardsPanel({ data }: { data: Detail }) {
+  return <section className={`${surface} p-4`}><div className="flex items-center justify-between"><h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Récompenses disponibles</h2><Gift className="h-4 w-4 text-violet-500" /></div><div className="mt-3 grid grid-cols-2 gap-2">{data.rewards.slice(0, 6).map((reward) => <article key={reward.id} className="rounded-2xl border border-slate-200 bg-slate-50/50 p-3"><div className="flex items-center justify-between"><span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-violet-600"><Gift className="h-4 w-4" /></span><span className="text-[10px] font-bold text-blue-600">{reward.pointsCost} pts</span></div><p className="mt-3 line-clamp-2 text-[11px] font-semibold text-slate-700">{reward.name}</p><RewardRedeemButton userId={data.user.id} rewardId={reward.id} disabled={data.user.loyaltyPoints < reward.pointsCost || Boolean(data.user.loyaltySuspendedAt)} /></article>)}</div></section>;
+}
 
-  const dateFormatter = new Intl.DateTimeFormat("fr-MA", {
-    day: "2-digit", month: "short", year: "numeric",
-  });
+function LedgerPanel({ transactions }: { transactions: Detail["user"]["loyaltyTransactions"] }) {
+  return <section className={`${surface} p-4`}><div className="flex items-center justify-between"><h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Historique fidélité</h2><WalletCards className="h-4 w-4 text-blue-500" /></div><div className="mt-3 divide-y divide-slate-100">{transactions.length ? transactions.map((transaction) => <article key={transaction.id} className="flex items-center gap-3 py-2.5"><span className={cn("flex h-8 w-8 items-center justify-center rounded-xl", transaction.amount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}><Trophy className="h-3.5 w-3.5" /></span><div className="min-w-0 flex-1"><p className="truncate text-[11px] font-semibold text-slate-700">{transaction.reason}</p><p className="text-[9px] text-slate-400">{dateTime.format(transaction.createdAt)} · {transaction.createdBy || "Système"}</p></div><strong className={cn("text-xs", transaction.amount > 0 ? "text-emerald-600" : "text-rose-600")}>{transaction.amount > 0 ? "+" : ""}{transaction.amount} pts</strong></article>) : <p className="py-12 text-center text-xs text-slate-400">Aucun mouvement.</p>}</div></section>;
+}
 
-  const initials = user.fullName
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  return (
-    <div className="space-y-8">
-      {/* Back */}
-      <Link
-        href="/admin/clients"
-        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-shop_btn_dark_green"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Retour aux clients
-      </Link>
-
-      {/* ── LOYALTY CARD (visual) ── */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Card */}
-        <div
-          className={cn(
-            "relative overflow-hidden rounded-[28px] bg-gradient-to-br p-8 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.3)] ring-2",
-            style.gradient,
-            style.ring
-          )}
-        >
-          {/* Background decoration */}
-          <div className="pointer-events-none absolute -right-10 -top-10 h-52 w-52 rounded-full bg-white/10" />
-          <div className="pointer-events-none absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-white/10" />
-
-          {/* Top row */}
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className={cn("text-[11px] font-bold uppercase tracking-[0.22em] opacity-70", style.text)}>
-                Zayna Parapharmacie
-              </p>
-              <p className={cn("mt-1 text-[11px] uppercase tracking-wider opacity-60", style.text)}>
-                Carte de fidélité
-              </p>
-            </div>
-            <div className={cn("flex items-center gap-2 rounded-2xl bg-white/20 px-3 py-1.5", style.text)}>
-              <TierIcon className="h-4 w-4" />
-              <span className="text-sm font-bold">{TIER_LABELS[user.loyaltyTier]}</span>
-            </div>
-          </div>
-
-          {/* Avatar + name */}
-          <div className="relative mt-8 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/25 text-2xl font-black text-white">
-              {initials}
-            </div>
-            <div>
-              <p className={cn("text-xl font-bold", style.text)}>{user.fullName}</p>
-              <p className={cn("text-xs opacity-70", style.text)}>{user.email}</p>
-            </div>
-          </div>
-
-          {/* Card number + points */}
-          <div className="relative mt-8 flex items-end justify-between">
-            <div>
-              <p className={cn("font-mono text-lg font-bold tracking-[0.2em]", style.text)}>
-                {user.loyaltyCardNumber}
-              </p>
-              <p className={cn("mt-1 text-[11px] uppercase tracking-wider opacity-60", style.text)}>
-                Numéro de carte
-              </p>
-            </div>
-            <div className="text-right">
-              <p className={cn("text-3xl font-black", style.text)}>
-                {user.loyaltyPoints.toLocaleString("fr-MA")}
-              </p>
-              <p className={cn("text-[11px] uppercase tracking-wider opacity-60", style.text)}>
-                points
-              </p>
-            </div>
-          </div>
-
-          {/* Member since */}
-          <div className={cn("relative mt-6 border-t border-white/20 pt-4 text-[11px] opacity-60", style.text)}>
-            Membre depuis {dateFormatter.format(new Date(user.createdAt))}
-          </div>
-        </div>
-
-        {/* Tier progress + benefits */}
-        <div className="space-y-4">
-          {/* Progress */}
-          <div className={cn(adminSurfaceClassName, "p-5")}>
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-              Progression vers le prochain palier
-            </p>
-
-            <div className="mt-4">
-              {nextTier ? (
-                <>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-700">
-                      {TIER_LABELS[user.loyaltyTier]}
-                    </span>
-                    <span className="font-semibold text-slate-900">
-                      {TIER_LABELS[nextTier]}
-                    </span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={cn("h-full rounded-full transition-all", style.bar)}
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-slate-500">
-                    Plus que{" "}
-                    <strong className="text-shop_btn_dark_green">
-                      {pointsNeeded} points
-                    </strong>{" "}
-                    pour atteindre le tier{" "}
-                    <strong>{TIER_LABELS[nextTier]}</strong>
-                    {" "}(≈ {Math.ceil(pointsNeeded / 10) * 100} MAD d&apos;achat)
-                  </p>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 rounded-2xl bg-yellow-50 px-4 py-3">
-                  <Sparkles className="h-4 w-4 text-yellow-500" />
-                  <p className="text-sm font-semibold text-yellow-800">
-                    Tier Gold atteint — avantages VIP actifs
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Rule reminder */}
-            <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3">
-              <p className="text-[11px] font-semibold text-slate-500">Règle fidélité</p>
-              <p className="mt-0.5 text-xs text-slate-600">
-                <strong>100 MAD</strong> dépensés = <strong>10 points</strong> •{" "}
-                <strong className="text-yellow-700">600 pts = Gold</strong>
-              </p>
-            </div>
-          </div>
-
-          {/* Benefits */}
-          <div className={cn(adminSurfaceClassName, "p-5")}>
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
-              <Award className="h-3.5 w-3.5" />
-              Avantages {TIER_LABELS[user.loyaltyTier]}
-            </p>
-            <ul className="mt-3 space-y-2">
-              {benefits.map((b) => (
-                <li key={b} className="flex items-start gap-2 text-xs text-slate-700">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-shop_light_green" />
-                  {b}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Stats ── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          { label: "Commandes", value: user.orders.length, icon: ShoppingBag },
-          { label: "Payées",    value: paidOrders,          icon: CreditCard   },
-          { label: "Total dépensé", value: adminCurrencyFormatter.format(totalSpent), icon: TrendingUp },
-          { label: "Panier moyen",  value: adminCurrencyFormatter.format(avgOrder),   icon: Package    },
-        ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className={cn(adminSurfaceClassName, "flex items-center gap-3 p-5")}>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-shop_btn_dark_green/8 text-shop_btn_dark_green">
-              <Icon className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-lg font-bold text-slate-900">{value}</p>
-              <p className="text-xs text-slate-400">{label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Orders history ── */}
-      <div className={cn(adminSurfaceClassName, "overflow-hidden")}>
-        <div className="border-b border-slate-100 px-6 py-4">
-          <p className="text-sm font-semibold text-slate-700">Historique des commandes</p>
-        </div>
-
-        {user.orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-slate-400">
-            <ShoppingBag className="h-8 w-8 opacity-30" />
-            <p className="text-sm">Aucune commande</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-50">
-            {user.orders.map((order) => {
-              const itemsSummary = order.items
-                .map((i) => `${i.productNameSnapshot} ×${i.quantity}`)
-                .join(", ");
-              const more = (order.items.length === 3 && order.items.length < 4) ? "…" : "";
-
-              return (
-                <div
-                  key={order.id}
-                  className="flex flex-wrap items-center gap-4 px-6 py-4 hover:bg-slate-50/60"
-                >
-                  {/* Order number */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link
-                        href={`/admin/orders?order=${order.orderNumber}`}
-                        className="font-mono text-xs font-semibold text-shop_btn_dark_green hover:underline"
-                      >
-                        #{order.orderNumber.slice(-8).toUpperCase()}
-                      </Link>
-                      <StatusPill value={order.status} />
-                      <StatusPill value={order.paymentStatus} />
-                    </div>
-                    {itemsSummary && (
-                      <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-                        {itemsSummary}{more}
-                      </p>
-                    )}
-                    {order.shippingCity && (
-                      <p className="text-[11px] text-slate-400">{order.shippingCity}</p>
-                    )}
-                  </div>
-
-                  {/* Date */}
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {dateFormatter.format(new Date(order.orderDate))}
-                  </div>
-
-                  {/* Amount */}
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-slate-900">
-                      {adminCurrencyFormatter.format(Number(order.totalPrice))}
-                    </p>
-                    <p className="text-[11px] text-shop_light_green">
-                      +{Math.floor(Number(order.totalPrice) / 100) * 10} pts
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+function OrdersPanel({ orders, earnedByOrder }: { orders: Detail["user"]["orders"]; earnedByOrder: Map<string, number> }) {
+  return <section className={`${surface} overflow-hidden`}><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Historique commandes</h2><Calendar className="h-4 w-4 text-slate-400" /></div>{orders.length ? <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-xs"><thead className="bg-slate-50/70 text-[9px] uppercase tracking-wider text-slate-400"><tr><th className="px-5 py-3">Commande</th><th>Date</th><th>Statut</th><th>Montant</th><th>Points gagnés</th><th>Livraison</th><th>Action</th></tr></thead><tbody className="divide-y divide-slate-100">{orders.map((order) => { const qualifies = order.status === "delivered" && order.paymentStatus === "paid"; return <tr key={order.id}><td className="px-5 py-3 font-mono font-semibold text-blue-600">#{order.orderNumber.slice(-8).toUpperCase()}</td><td>{date.format(order.orderDate)}</td><td><span className={cn("rounded-full px-2 py-1 text-[9px] font-semibold", qualifies ? "bg-emerald-50 text-emerald-700" : order.status === "cancelled" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700")}>{order.status} · {order.paymentStatus}</span></td><td className="font-semibold">{money.format(Number(order.totalPrice))}</td><td className={cn("font-semibold", earnedByOrder.get(order.id) ? "text-emerald-600" : "text-slate-400")}>{earnedByOrder.get(order.id) ? `+${earnedByOrder.get(order.id)} pts` : "0 pt"}</td><td>{order.deliveryCompany || (order.shippingAddress ? "Livraison à domicile" : "—")}</td><td><Link href={`/admin/orders?order=${order.orderNumber}`} className="rounded-lg border px-2 py-1 text-[9px] font-semibold text-blue-600">Voir le détail</Link></td></tr>; })}</tbody></table></div> : <p className="px-5 py-14 text-center text-xs text-slate-400">Aucune commande.</p>}</section>;
 }

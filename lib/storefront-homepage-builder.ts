@@ -9,6 +9,10 @@ import {
 } from "@/lib/homepage-sections";
 import { mapBrand, mapCategory, mapProduct } from "@/lib/data/mappers";
 import { prisma } from "@/lib/prisma";
+import {
+  activeProductPromotionWhere,
+  sellableProductWhere,
+} from "@/lib/products/storefront-rules";
 
 const productSelect = {
   id: true,
@@ -16,11 +20,16 @@ const productSelect = {
   slug: true,
   description: true,
   price: true,
+  regularPrice: true,
+  salePrice: true,
   discount: true,
   stock: true,
   status: true,
   isActive: true,
   isFeatured: true,
+  isPromotion: true,
+  promotionStartsAt: true,
+  promotionEndsAt: true,
   images: {
     orderBy: {
       sortOrder: "asc" as const,
@@ -41,6 +50,7 @@ const productSelect = {
     },
   },
   categories: {
+    where: { category: { isActive: true, archivedAt: null } },
     include: {
       category: {
         select: {
@@ -55,7 +65,7 @@ type ProductRecord = Prisma.ProductGetPayload<{
   select: typeof productSelect;
 }>;
 
-type HomepageBuilderSettings = {
+export type HomepageBuilderSettings = {
   heroAutoplayMs: number;
   featuredCategoriesLimit: number;
   promotionsLimit: number;
@@ -77,7 +87,7 @@ type HomepageBuilderSettings = {
   newsletterErrorMessage: string;
 };
 
-type HomepageBuilderShell = {
+export type HomepageBuilderShell = {
   headerLinks: StorefrontRenderableLink[];
   footerQuickLinks: StorefrontRenderableLink[];
   footerLegalLinks: StorefrontRenderableLink[];
@@ -130,7 +140,53 @@ const resolveProductOrderBy = (
   return [{ updatedAt: "desc" }];
 };
 
-const getBestSellerProducts = async (limit: number) => {
+export type HomepageSectionSource = {
+  id: string;
+  key: string;
+  type: HomepageDynamicSection["type"];
+  title: string;
+  subtitle: string | null;
+  order: number;
+  layout: string | null;
+  theme: string | null;
+  ctaLabel: string | null;
+  ctaLink: string | null;
+  limit: number | null;
+  config: unknown;
+};
+
+type HomepageContentSources = {
+  heroSlides?: Array<{
+    id: string;
+    badge: string | null;
+    title: string;
+    subtitle: string | null;
+    ctaLabel: string | null;
+    ctaHref: string | null;
+    imageUrl: string | null;
+    altText: string | null;
+    sortOrder: number;
+  }>;
+  trustItems?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    sortOrder: number;
+  }>;
+};
+
+const productAvailabilityWhere = (excludeOutOfStock: boolean) =>
+  excludeOutOfStock ? ({ stock: { gt: 0 } } as const) : {};
+
+const getBestSellerProducts = async (
+  limit: number,
+  periodDays: number | null,
+  excludeOutOfStock: boolean
+) => {
+  const periodStart = periodDays
+    ? new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000)
+    : undefined;
   const bestSellerGroups = await prisma.orderItem.groupBy({
     by: ["productId"],
     where: {
@@ -139,6 +195,8 @@ const getBestSellerProducts = async (limit: number) => {
       },
       order: {
         paymentStatus: "paid",
+        status: "delivered",
+        ...(periodStart ? { orderDate: { gte: periodStart } } : {}),
       },
     },
     _sum: {
@@ -165,7 +223,8 @@ const getBestSellerProducts = async (limit: number) => {
       id: {
         in: bestSellerIds,
       },
-      isActive: true,
+      ...sellableProductWhere,
+      ...productAvailabilityWhere(excludeOutOfStock),
     },
     select: productSelect,
   });
@@ -178,7 +237,10 @@ const getBestSellerProducts = async (limit: number) => {
     .map(toProduct);
 };
 
-const resolveManualProductsFromConfig = async (productIds: string[]) => {
+const resolveManualProductsFromConfig = async (
+  productIds: string[],
+  excludeOutOfStock = true
+) => {
   if (!productIds.length) {
     return [];
   }
@@ -188,7 +250,8 @@ const resolveManualProductsFromConfig = async (productIds: string[]) => {
       id: {
         in: productIds,
       },
-      isActive: true,
+      ...sellableProductWhere,
+      ...productAvailabilityWhere(excludeOutOfStock),
     },
     select: productSelect,
   });
@@ -201,30 +264,17 @@ const resolveManualProductsFromConfig = async (productIds: string[]) => {
     .map(toProduct);
 };
 
-export async function buildDynamicHomepageSections({
+export async function resolveDynamicHomepageSections({
+  sections,
   shell,
   settings,
+  content = {},
 }: {
+  sections: HomepageSectionSource[];
   shell: HomepageBuilderShell;
   settings: HomepageBuilderSettings;
+  content?: HomepageContentSources;
 }): Promise<HomepageDynamicSection[]> {
-  const sections = await prisma.homepageSection.findMany({
-    where: {
-      isActive: true,
-    },
-    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-    include: {
-      products: {
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        include: {
-          product: {
-            select: productSelect,
-          },
-        },
-      },
-    },
-  });
-
   if (!sections.length) {
     return [];
   }
@@ -248,10 +298,8 @@ export async function buildDynamicHomepageSections({
     };
 
     if (section.type === "hero") {
-      const slides = await prisma.homeHeroSlide.findMany({
-        where: {
-          isActive: true,
-        },
+      const slides = content.heroSlides ?? await prisma.homeHeroSlide.findMany({
+        where: { isActive: true, archivedAt: null },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       });
 
@@ -301,18 +349,7 @@ export async function buildDynamicHomepageSections({
               : 10
       );
 
-      const manualFromRelation = section.products
-        .filter((item) => item.product?.isActive)
-        .map((item) => ({
-          sortOrder: item.sortOrder,
-          product: item.product,
-        }))
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((item) => item.product)
-        .filter((item): item is ProductRecord => Boolean(item))
-        .map(toProduct);
-
-      let products = manualFromRelation;
+      let products: ReturnType<typeof toProduct>[] = [];
 
       if (productConfig.sourceType !== "manual_selection") {
         const orderBy = resolveProductOrderBy(productConfig.sortBy, productConfig.sortOrder);
@@ -320,10 +357,19 @@ export async function buildDynamicHomepageSections({
         if (productConfig.sourceType === "by_category" && productConfig.categoryId) {
           const items = await prisma.product.findMany({
             where: {
-              isActive: true,
+              ...sellableProductWhere,
+              ...productAvailabilityWhere(productConfig.excludeOutOfStock),
               categories: {
                 some: {
                   categoryId: productConfig.categoryId,
+                  category: {
+                    isActive: true,
+                    archivedAt: null,
+                    OR: [
+                      { parentId: null },
+                      { parent: { is: { isActive: true, archivedAt: null } } },
+                    ],
+                  },
                 },
               },
             },
@@ -335,7 +381,8 @@ export async function buildDynamicHomepageSections({
         } else if (productConfig.sourceType === "by_brand" && productConfig.brandId) {
           const items = await prisma.product.findMany({
             where: {
-              isActive: true,
+              ...sellableProductWhere,
+              ...productAvailabilityWhere(productConfig.excludeOutOfStock),
               brandId: productConfig.brandId,
             },
             orderBy,
@@ -346,7 +393,8 @@ export async function buildDynamicHomepageSections({
         } else if (productConfig.sourceType === "by_tag" && productConfig.tagId) {
           const items = await prisma.product.findMany({
             where: {
-              isActive: true,
+              ...sellableProductWhere,
+              ...productAvailabilityWhere(productConfig.excludeOutOfStock),
               tags: {
                 some: {
                   tagId: productConfig.tagId,
@@ -361,17 +409,9 @@ export async function buildDynamicHomepageSections({
         } else if (productConfig.sourceType === "discounted") {
           const items = await prisma.product.findMany({
             where: {
-              isActive: true,
-              OR: [
-                {
-                  discount: {
-                    gt: 0,
-                  },
-                },
-                {
-                  status: "sale",
-                },
-              ],
+              ...sellableProductWhere,
+              ...productAvailabilityWhere(productConfig.excludeOutOfStock),
+              ...activeProductPromotionWhere(),
             },
             orderBy: [{ discount: "desc" }, { updatedAt: "desc" }],
             select: productSelect,
@@ -379,11 +419,20 @@ export async function buildDynamicHomepageSections({
           });
           products = items.map(toProduct);
         } else if (productConfig.sourceType === "best_sellers") {
-          products = await getBestSellerProducts(limit);
+          products = await getBestSellerProducts(
+            limit,
+            productConfig.periodDays ?? 30,
+            productConfig.excludeOutOfStock
+          );
         } else if (productConfig.sourceType === "newest") {
+          const periodStart = productConfig.periodDays
+            ? new Date(Date.now() - productConfig.periodDays * 24 * 60 * 60 * 1000)
+            : undefined;
           const items = await prisma.product.findMany({
             where: {
-              isActive: true,
+              ...sellableProductWhere,
+              ...productAvailabilityWhere(productConfig.excludeOutOfStock),
+              ...(periodStart ? { createdAt: { gte: periodStart } } : {}),
             },
             orderBy: [{ createdAt: "desc" }],
             select: productSelect,
@@ -393,8 +442,9 @@ export async function buildDynamicHomepageSections({
         } else {
           const items = await prisma.product.findMany({
             where: {
-              isActive: true,
+              ...sellableProductWhere,
               isFeatured: true,
+              ...productAvailabilityWhere(productConfig.excludeOutOfStock),
             },
             orderBy,
             select: productSelect,
@@ -403,7 +453,10 @@ export async function buildDynamicHomepageSections({
           products = items.map(toProduct);
         }
       } else if (!products.length) {
-        products = await resolveManualProductsFromConfig(productConfig.productIds);
+        products = await resolveManualProductsFromConfig(
+          productConfig.productIds,
+          productConfig.excludeOutOfStock
+        );
       }
 
       if (productConfig.hideIfEmpty && !products.length) {
@@ -421,6 +474,8 @@ export async function buildDynamicHomepageSections({
           sortBy: productConfig.sortBy,
           sortOrder: productConfig.sortOrder,
           hideIfEmpty: productConfig.hideIfEmpty,
+          excludeOutOfStock: productConfig.excludeOutOfStock,
+          periodDays: productConfig.periodDays,
           limit,
         },
         products: products.slice(0, limit),
@@ -440,6 +495,12 @@ export async function buildDynamicHomepageSections({
       if (categoryIds.length) {
         const rows = await prisma.category.findMany({
           where: {
+            isActive: true,
+            archivedAt: null,
+            OR: [
+              { parentId: null },
+              { parent: { is: { isActive: true, archivedAt: null } } },
+            ],
             id: {
               in: categoryIds,
             },
@@ -454,7 +515,9 @@ export async function buildDynamicHomepageSections({
             imageUrl: true,
             _count: {
               select: {
-                products: true,
+                products: {
+                  where: { product: { is: sellableProductWhere } },
+                },
               },
             },
           },
@@ -467,12 +530,16 @@ export async function buildDynamicHomepageSections({
           .map(toCategory);
       } else {
         const rows = await prisma.category.findMany({
-          where: featuredOnly
-            ? {
-                featured: true,
-              }
-            : undefined,
-          orderBy: [{ title: "asc" }],
+          where: {
+            isActive: true,
+            archivedAt: null,
+            OR: [
+              { parentId: null },
+              { parent: { is: { isActive: true, archivedAt: null } } },
+            ],
+            ...(featuredOnly ? { featured: true } : {}),
+          },
+          orderBy: [{ range: "asc" }, { title: "asc" }],
           select: {
             id: true,
             title: true,
@@ -483,7 +550,9 @@ export async function buildDynamicHomepageSections({
             imageUrl: true,
             _count: {
               select: {
-                products: true,
+                products: {
+                  where: { product: { is: sellableProductWhere } },
+                },
               },
             },
           },
@@ -523,6 +592,8 @@ export async function buildDynamicHomepageSections({
             id: {
               in: brandIds,
             },
+            isActive: true,
+            archivedAt: null,
           },
           select: {
             id: true,
@@ -540,6 +611,10 @@ export async function buildDynamicHomepageSections({
           .map(toBrand);
       } else {
         const rows = await prisma.brand.findMany({
+          where: {
+            isActive: true,
+            archivedAt: null,
+          },
           orderBy: [{ title: "asc" }],
           select: {
             id: true,
@@ -570,10 +645,8 @@ export async function buildDynamicHomepageSections({
     }
 
     if (section.type === "reassurance") {
-      const trustItems = await prisma.homeTrustItem.findMany({
-        where: {
-          isActive: true,
-        },
+      const trustItems = content.trustItems ?? await prisma.homeTrustItem.findMany({
+        where: { isActive: true, archivedAt: null },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       });
 
@@ -754,4 +827,64 @@ export async function buildDynamicHomepageSections({
   }
 
   return resolved.sort((left, right) => left.order - right.order);
+}
+
+export async function buildDynamicHomepageSections({
+  shell,
+  settings,
+}: {
+  shell: HomepageBuilderShell;
+  settings: HomepageBuilderSettings;
+}): Promise<HomepageDynamicSection[]> {
+  const now = new Date();
+  const sections = await prisma.homepageSection.findMany({
+    where: {
+      isActive: true,
+      archivedAt: null,
+      AND: [
+        { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+        { OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+      ],
+    },
+    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      key: true,
+      type: true,
+      title: true,
+      subtitle: true,
+      order: true,
+      layout: true,
+      theme: true,
+      ctaLabel: true,
+      ctaLink: true,
+      limit: true,
+      config: true,
+    },
+  });
+
+  const [heroSlides, trustItems] = await Promise.all([
+    prisma.homeHeroSlide.findMany({
+      where: {
+        isActive: true,
+        archivedAt: null,
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+        ],
+      },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
+    prisma.homeTrustItem.findMany({
+      where: { isActive: true, archivedAt: null },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    }),
+  ]);
+
+  return resolveDynamicHomepageSections({
+    sections,
+    shell,
+    settings,
+    content: { heroSlides, trustItems },
+  });
 }

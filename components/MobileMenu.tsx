@@ -9,9 +9,10 @@ interface MobileMenuProps {
   links: StorefrontLink[];
   categories: Category[];
   socialLinks: StorefrontSocialLink[];
+  pathnameOverride?: string;
 }
 
-const MobileMenu = ({ links, categories, socialLinks }: MobileMenuProps) => {
+const MobileMenu = ({ links, categories, socialLinks, pathnameOverride }: MobileMenuProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)  
   return (
     <>
@@ -28,6 +29,7 @@ const MobileMenu = ({ links, categories, socialLinks }: MobileMenuProps) => {
                 links={links}
                 categories={categories}
                 socialLinks={socialLinks}
+                pathnameOverride={pathnameOverride}
             />
         </div>
     </>

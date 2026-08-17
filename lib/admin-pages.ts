@@ -15,6 +15,7 @@ import {
   type AdminDashboardData,
 } from "@/lib/admin";
 import { sanitizePublicImageUrl } from "@/lib/image";
+import { getPotentialBrandDuplicateGroups } from "@/lib/brands";
 import { prisma } from "@/lib/prisma";
 
 const adminDataTag = getAdminDataTag();
@@ -268,6 +269,8 @@ const mapBrands = (
     title: string;
     description: string | null;
     imageUrl: string | null;
+    isActive: boolean;
+    archivedAt: Date | null;
     updatedAt: Date;
     _count: {
       products: number;
@@ -280,6 +283,8 @@ const mapBrands = (
     description: brand.description,
     productCount: brand._count.products,
     imageUrl: brand.imageUrl,
+    isActive: brand.isActive,
+    archivedAt: brand.archivedAt,
     updatedAt: brand.updatedAt,
   }));
 
@@ -375,6 +380,7 @@ const normalizeCategories = (categories: AdminDashboardData["categories"]) =>
 const normalizeBrands = (brands: AdminDashboardData["brands"]) =>
   brands.map((brand) => ({
     ...brand,
+    archivedAt: toDate(brand.archivedAt),
     updatedAt: new Date(brand.updatedAt),
   }));
 
@@ -1803,7 +1809,20 @@ export type AdminProductsPageData = {
   lowStockItems: AdminDashboardData["lowStockItems"];
 };
 
-async function fetchAdminProductsPageData(): Promise<AdminProductsPageData> {
+async function fetchAdminProductsPageData(
+  productBrandId = "",
+  productCategoryId = ""
+): Promise<AdminProductsPageData> {
+  const productFilters: Prisma.ProductWhereInput[] = [];
+  if (productBrandId === "unassigned") productFilters.push({ brandId: null });
+  else if (productBrandId) productFilters.push({ brandId: productBrandId });
+  if (productCategoryId === "unassigned") {
+    productFilters.push({
+      categories: { none: { category: { archivedAt: null, isActive: true } } },
+    });
+  } else if (productCategoryId) {
+    productFilters.push({ categories: { some: { categoryId: productCategoryId } } });
+  }
   const [
     totalProducts,
     featuredProducts,
@@ -1831,6 +1850,7 @@ async function fetchAdminProductsPageData(): Promise<AdminProductsPageData> {
     prisma.brand.count(),
     prisma.category.count(),
     prisma.product.findMany({
+      where: productFilters.length ? { AND: productFilters } : {},
       orderBy: {
         updatedAt: "desc",
       },
@@ -1881,6 +1901,8 @@ async function fetchAdminProductsPageData(): Promise<AdminProductsPageData> {
         title: true,
         description: true,
         imageUrl: true,
+        isActive: true,
+        archivedAt: true,
         updatedAt: true,
         _count: {
           select: {
@@ -1890,6 +1912,7 @@ async function fetchAdminProductsPageData(): Promise<AdminProductsPageData> {
       },
     }),
     prisma.category.findMany({
+      where: { archivedAt: null },
       orderBy: {
         title: "asc",
       },
@@ -1964,9 +1987,14 @@ const getCachedAdminProductsPageData = unstable_cache(
   }
 );
 
-export async function getAdminProductsPageData(): Promise<AdminProductsPageData> {
+export async function getAdminProductsPageData(
+  options: { brandId?: string; categoryId?: string } = {}
+): Promise<AdminProductsPageData> {
   await requireAdmin();
-  const data = await getCachedAdminProductsPageData();
+  const data = await getCachedAdminProductsPageData(
+    options.brandId || "",
+    options.categoryId || ""
+  );
 
   return {
     ...data,
@@ -2068,73 +2096,176 @@ export async function getAdminCategoriesPageData(): Promise<AdminCategoriesPageD
   };
 }
 
+export type AdminBrandFilters = {
+  query: string;
+  status: "all" | "active" | "inactive" | "archived";
+  association: "all" | "with-products" | "without-products";
+  sort: "a-z" | "z-a";
+  page: number;
+};
+
+export const parseAdminBrandFilters = (
+  params: Record<string, string | string[] | undefined>
+): AdminBrandFilters => {
+  const status = getParamValue(params, "brandStatus");
+  const association = getParamValue(params, "association");
+  const sort = getParamValue(params, "sort");
+  const rawPage = Number.parseInt(getParamValue(params, "page") || "1", 10);
+
+  return {
+    query: (getParamValue(params, "q") || "").trim().slice(0, 100),
+    status: ["active", "inactive", "archived"].includes(status || "")
+      ? (status as AdminBrandFilters["status"])
+      : "all",
+    association: ["with-products", "without-products"].includes(association || "")
+      ? (association as AdminBrandFilters["association"])
+      : "all",
+    sort: sort === "z-a" ? "z-a" : "a-z",
+    page: Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1,
+  };
+};
+
+export type AdminBrandListItem = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  isActive: boolean;
+  archivedAt: Date | null;
+  archivedBy: string | null;
+  updatedAt: Date;
+  productCount: number;
+  products: Array<{ id: string; name: string }>;
+};
+
 export type AdminBrandsPageData = {
   metrics: {
     totalBrands: number;
     activeBrands: number;
-    totalProducts: number;
+    brandsWithoutProducts: number;
+    brandsWithoutLogo: number;
     brandlessProducts: number;
+    archivedBrands: number;
   };
-  brands: AdminDashboardData["brands"];
+  brands: AdminBrandListItem[];
+  duplicateGroups: Array<Array<{ id: string; title: string }>>;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    pageSize: number;
+    filteredCount: number;
+  };
 };
 
-async function fetchAdminBrandsPageData(): Promise<AdminBrandsPageData> {
-  const [totalBrands, totalProducts, brandlessProducts, brands] = await Promise.all([
+export async function getAdminBrandsPageData(
+  filters: AdminBrandFilters
+): Promise<AdminBrandsPageData> {
+  await requireAdmin();
+
+  const clauses: Prisma.BrandWhereInput[] = [];
+
+  if (filters.query) {
+    clauses.push({ title: { contains: filters.query, mode: "insensitive" } });
+  }
+
+  if (filters.status === "active") {
+    clauses.push({ archivedAt: null, isActive: true });
+  } else if (filters.status === "inactive") {
+    clauses.push({ archivedAt: null, isActive: false });
+  } else if (filters.status === "archived") {
+    clauses.push({ archivedAt: { not: null } });
+  }
+
+  if (filters.association === "with-products") {
+    clauses.push({ products: { some: {} } });
+  } else if (filters.association === "without-products") {
+    clauses.push({ products: { none: {} } });
+  }
+
+  const where: Prisma.BrandWhereInput = clauses.length ? { AND: clauses } : {};
+  const pageSize = 10;
+
+  const [
+    totalBrands,
+    activeBrands,
+    brandsWithoutProducts,
+    brandsWithoutLogo,
+    brandlessProducts,
+    archivedBrands,
+    filteredCount,
+    duplicateCandidates,
+  ] = await Promise.all([
     prisma.brand.count(),
-    prisma.product.count(),
-    prisma.product.count({
+    prisma.brand.count({ where: { archivedAt: null, isActive: true } }),
+    prisma.brand.count({ where: { archivedAt: null, products: { none: {} } } }),
+    prisma.brand.count({
       where: {
-        brandId: null,
+        archivedAt: null,
+        OR: [{ imageUrl: null }, { imageUrl: "" }],
       },
     }),
-    prisma.brand.findMany({
-      orderBy: {
-        title: "asc",
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        imageUrl: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            products: true,
-          },
-        },
-      },
-    }),
+    prisma.product.count({ where: { brandId: null } }),
+    prisma.brand.count({ where: { archivedAt: { not: null } } }),
+    prisma.brand.count({ where }),
+    prisma.brand.findMany({ select: { id: true, title: true } }),
   ]);
 
-  const mappedBrands = mapBrands(brands);
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+  const currentPage = Math.min(filters.page, totalPages);
+  const brands = await prisma.brand.findMany({
+    where,
+    orderBy: { title: filters.sort === "z-a" ? "desc" : "asc" },
+    skip: (currentPage - 1) * pageSize,
+    take: pageSize,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      description: true,
+      imageUrl: true,
+      isActive: true,
+      archivedAt: true,
+      archivedBy: true,
+      updatedAt: true,
+      products: {
+        orderBy: { name: "asc" },
+        take: 3,
+        select: { id: true, name: true },
+      },
+      _count: { select: { products: true } },
+    },
+  });
 
   return {
     metrics: {
       totalBrands,
-      activeBrands: mappedBrands.filter((brand) => brand.productCount > 0).length,
-      totalProducts,
+      activeBrands,
+      brandsWithoutProducts,
+      brandsWithoutLogo,
       brandlessProducts,
+      archivedBrands,
     },
-    brands: mappedBrands,
-  };
-}
-
-const getCachedAdminBrandsPageData = unstable_cache(
-  fetchAdminBrandsPageData,
-  ["admin-brands-page-data"],
-  {
-    tags: [adminDataTag],
-    revalidate: 120,
-  }
-);
-
-export async function getAdminBrandsPageData(): Promise<AdminBrandsPageData> {
-  await requireAdmin();
-  const data = await getCachedAdminBrandsPageData();
-
-  return {
-    ...data,
-    brands: normalizeBrands(data.brands),
+    brands: brands.map((brand) => ({
+      id: brand.id,
+      title: brand.title,
+      slug: brand.slug,
+      description: brand.description,
+      imageUrl: brand.imageUrl,
+      isActive: brand.isActive,
+      archivedAt: brand.archivedAt,
+      archivedBy: brand.archivedBy,
+      updatedAt: brand.updatedAt,
+      productCount: brand._count.products,
+      products: brand.products,
+    })),
+    duplicateGroups: getPotentialBrandDuplicateGroups(duplicateCandidates),
+    pagination: {
+      currentPage,
+      totalPages,
+      pageSize,
+      filteredCount,
+    },
   };
 }
 

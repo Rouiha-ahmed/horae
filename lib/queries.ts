@@ -3,6 +3,10 @@ import { unstable_cache } from "next/cache";
 
 import { mapBrand, mapCategory, mapOrder, mapProduct } from "@/lib/data/mappers";
 import { prisma } from "@/lib/prisma";
+import {
+  activeProductPromotionWhere,
+  sellableProductWhere,
+} from "@/lib/products/storefront-rules";
 import type { BRANDS_QUERYResult, Category, Product } from "@/types";
 
 const productSelect = {
@@ -11,10 +15,16 @@ const productSelect = {
   slug: true,
   description: true,
   price: true,
+  regularPrice: true,
+  salePrice: true,
   discount: true,
   stock: true,
   status: true,
+  isActive: true,
   isFeatured: true,
+  isPromotion: true,
+  promotionStartsAt: true,
+  promotionEndsAt: true,
   images: {
     orderBy: {
       sortOrder: "asc" as const,
@@ -35,6 +45,9 @@ const productSelect = {
     },
   },
   categories: {
+    where: {
+      category: { isActive: true, archivedAt: null },
+    },
     include: {
       category: {
         select: {
@@ -96,10 +109,15 @@ const normalizeSearchProductsInput = ({
 const getCachedCategories = unstable_cache(
   async (quantity?: number): Promise<Category[]> => {
     const categories = await prisma.category.findMany({
-      orderBy: {
-        title: "asc",
+      where: {
+        isActive: true,
+        archivedAt: null,
+        OR: [
+          { parentId: null },
+          { parent: { is: { isActive: true, archivedAt: null } } },
+        ],
       },
-      take: quantity,
+      orderBy: [{ range: "asc" }, { title: "asc" }],
       select: {
         id: true,
         title: true,
@@ -108,15 +126,23 @@ const getCachedCategories = unstable_cache(
         range: true,
         featured: true,
         imageUrl: true,
+        parentId: true,
         _count: {
           select: {
-            products: true,
+            products: {
+              where: { product: { is: sellableProductWhere } },
+            },
           },
         },
       },
     });
 
-    return categories.map(mapCategory);
+    const roots = categories.filter((category) => !category.parentId);
+    const ordered = roots.flatMap((root) => [
+      root,
+      ...categories.filter((category) => category.parentId === root.id),
+    ]);
+    return ordered.slice(0, quantity || undefined).map(mapCategory);
   },
   ["storefront-categories"],
   { revalidate: STOREFRONT_REVALIDATE }
@@ -125,6 +151,14 @@ const getCachedCategories = unstable_cache(
 const getCachedAllCategorySlugs = unstable_cache(
   async () => {
     const categories = await prisma.category.findMany({
+      where: {
+        isActive: true,
+        archivedAt: null,
+        OR: [
+          { parentId: null },
+          { parent: { is: { isActive: true, archivedAt: null } } },
+        ],
+      },
       orderBy: {
         slug: "asc",
       },
@@ -142,9 +176,15 @@ const getCachedAllCategorySlugs = unstable_cache(
 const getCachedFooterCategories = unstable_cache(
   async (quantity?: number) => {
     const categories = await prisma.category.findMany({
-      orderBy: {
-        title: "asc",
+      where: {
+        isActive: true,
+        archivedAt: null,
+        OR: [
+          { parentId: null },
+          { parent: { is: { isActive: true, archivedAt: null } } },
+        ],
       },
+      orderBy: [{ range: "asc" }, { title: "asc" }],
       take: quantity,
       select: {
         id: true,
@@ -168,6 +208,10 @@ const getCachedFooterCategories = unstable_cache(
 const getCachedAllBrands = unstable_cache(
   async (): Promise<BRANDS_QUERYResult> => {
     const brands = await prisma.brand.findMany({
+      where: {
+        isActive: true,
+        archivedAt: null,
+      },
       orderBy: {
         title: "asc",
       },
@@ -190,7 +234,9 @@ const getCachedDealProducts = unstable_cache(
   async (): Promise<Product[]> => {
     const products = await prisma.product.findMany({
       where: {
-        status: "hot",
+        ...sellableProductWhere,
+        stock: { gt: 0 },
+        ...activeProductPromotionWhere(),
       },
       orderBy: {
         name: "asc",
@@ -206,9 +252,10 @@ const getCachedDealProducts = unstable_cache(
 
 const getCachedProductBySlug = unstable_cache(
   async (slug: string): Promise<Product | null> => {
-    const product = await prisma.product.findUnique({
+    const product = await prisma.product.findFirst({
       where: {
         slug,
+        ...sellableProductWhere,
       },
       select: productSelect,
     });
@@ -222,6 +269,7 @@ const getCachedProductBySlug = unstable_cache(
 const getCachedAllProductSlugs = unstable_cache(
   async () => {
     const products = await prisma.product.findMany({
+      where: sellableProductWhere,
       orderBy: {
         slug: "asc",
       },
@@ -249,6 +297,7 @@ const getCachedSearchProducts = unstable_cache(
         categories: {
           some: {
             categoryId: input.selectedCategoryId,
+            category: { isActive: true, archivedAt: null },
           },
         },
       });
@@ -260,6 +309,8 @@ const getCachedSearchProducts = unstable_cache(
           some: {
             category: {
               slug: { in: input.selectedCategories },
+              isActive: true,
+              archivedAt: null,
             },
           },
         },
@@ -311,7 +362,10 @@ const getCachedSearchProducts = unstable_cache(
       { name: "asc" };
 
     const products = await prisma.product.findMany({
-      where: filters.length ? { AND: filters } : undefined,
+      where: {
+        ...sellableProductWhere,
+        ...(filters.length ? { AND: filters } : {}),
+      },
       orderBy,
       take: input.limit || undefined,
       select: productSelect,

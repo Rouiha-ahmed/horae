@@ -286,6 +286,8 @@ export type AdminDashboardData = {
     description: string | null;
     productCount: number;
     imageUrl: string | null;
+    isActive: boolean;
+    archivedAt: Date | null;
     updatedAt: Date;
   }>;
   products: Array<{
@@ -450,7 +452,7 @@ const fetchAdminDashboardData = async (): Promise<AdminDashboardData> => {
   ] = await Promise.all([
     prisma.order.count(),
     prisma.product.count(),
-    prisma.category.count(),
+    prisma.category.count({ where: { archivedAt: null } }),
     prisma.brand.count(),
     prisma.promoCode.count({
       where: {
@@ -468,6 +470,7 @@ const fetchAdminDashboardData = async (): Promise<AdminDashboardData> => {
       },
     }),
     prisma.category.findMany({
+      where: { archivedAt: null },
       orderBy: [{ range: "asc" }, { title: "asc" }],
       include: {
         _count: {
@@ -486,6 +489,8 @@ const fetchAdminDashboardData = async (): Promise<AdminDashboardData> => {
         title: true,
         description: true,
         imageUrl: true,
+        isActive: true,
+        archivedAt: true,
         updatedAt: true,
         _count: {
           select: {
@@ -675,6 +680,8 @@ const fetchAdminDashboardData = async (): Promise<AdminDashboardData> => {
       description: brand.description,
       productCount: brand._count.products,
       imageUrl: brand.imageUrl,
+      isActive: brand.isActive,
+      archivedAt: brand.archivedAt,
       updatedAt: brand.updatedAt,
     })),
     products: products.map((product) => ({

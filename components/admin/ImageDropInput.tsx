@@ -16,6 +16,8 @@ type ImageDropInputProps = {
   multiple?: boolean;
   existingImageUrls?: string[];
   maxFiles?: number;
+  maxSizeMb?: number;
+  formatLabel?: string;
 };
 
 const defaultAccept = "image/png,image/jpeg,image/webp,image/avif";
@@ -35,10 +37,13 @@ const ImageDropInput = ({
   multiple = false,
   existingImageUrls = [],
   maxFiles,
+  maxSizeMb = 5,
+  formatLabel = "JPG, PNG, WebP ou AVIF",
 }: ImageDropInputProps) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [validationError, setValidationError] = useState("");
 
   const previews = useMemo(() => buildPreviewList(files), [files]);
 
@@ -50,6 +55,29 @@ const ImageDropInput = ({
   );
 
   const syncFiles = (nextFiles: File[]) => {
+    const acceptedTypes = accept.split(",").map((value) => value.trim());
+    const invalidType = nextFiles.find(
+      (file) =>
+        !acceptedTypes.includes(file.type) &&
+        !acceptedTypes.some(
+          (acceptedType) =>
+            acceptedType.endsWith("/*") && file.type.startsWith(acceptedType.slice(0, -1))
+        )
+    );
+
+    if (invalidType) {
+      setValidationError(`${invalidType.name} n'est pas dans un format accepte.`);
+      return;
+    }
+
+    const oversizedFile = nextFiles.find((file) => file.size > maxSizeMb * 1024 * 1024);
+
+    if (oversizedFile) {
+      setValidationError(`${oversizedFile.name} depasse la limite de ${maxSizeMb} Mo.`);
+      return;
+    }
+
+    setValidationError("");
     const limitedFiles =
       typeof maxFiles === "number" ? nextFiles.slice(0, maxFiles) : nextFiles;
     const finalFiles = multiple ? limitedFiles : limitedFiles.slice(0, 1);
@@ -80,6 +108,7 @@ const ImageDropInput = ({
     }
 
     setFiles([]);
+    setValidationError("");
   };
 
   const gallery = previews.length
@@ -133,11 +162,17 @@ const ImageDropInput = ({
             Glissez vos images ici ou cliquez pour les choisir
           </p>
           <p className="text-xs text-slate-500">
-            JPG, PNG, WebP ou AVIF, 5 Mo max par image
+            {formatLabel}, {maxSizeMb} Mo max par image
             {maxFiles ? `, jusqu'a ${maxFiles} fichier(s)` : ""}
           </p>
         </div>
       </button>
+
+      {validationError ? (
+        <p role="alert" className="text-xs font-medium text-rose-600">
+          {validationError}
+        </p>
+      ) : null}
 
       {gallery.length ? (
         <div className="space-y-3 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.32)]">

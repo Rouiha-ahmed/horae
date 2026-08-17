@@ -1,5 +1,6 @@
 import CategoryProducts from "@/components/CategoryProducts";
 import Container from "@/components/Container";
+import { notFound } from "next/navigation";
 import {
   getAllCategorySlugs,
   getCategories,
@@ -24,6 +25,7 @@ const CategoryPage = async ({
   ]);
 
   const currentCategory = categories.find((c) => c.slug?.current === slug);
+  if (!currentCategory) notFound();
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f0f7f9_0%,#f8fafb_100%)]">
@@ -35,7 +37,7 @@ const CategoryPage = async ({
               Catalogue
             </p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-shop_dark_green md:text-3xl capitalize">
-              {currentCategory?.title || slug}
+              {currentCategory.title}
             </h1>
             <p className="mt-1 text-sm text-lightColor">
               Retrouvez tous les produits de cette categorie.

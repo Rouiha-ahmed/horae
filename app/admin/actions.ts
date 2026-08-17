@@ -4,6 +4,7 @@ import {
   HomepageProductSourceType,
   HomepageSectionType,
   PaymentMethod,
+  Prisma,
   SiteLinkGroup,
   type ProductStatus,
 } from "@prisma/client";
@@ -11,13 +12,12 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
-  adminOrderStageOptions,
-  adminStageToOrderStatus,
   getAdminDataTag,
-  orderStatusToDeliveryStatus,
   requireAdmin,
 } from "@/lib/admin";
 import { deleteStoredAsset, deleteStoredAssets, isUploadedFile, saveOptimizedImage } from "@/lib/admin-media";
+import { findSimilarBrand } from "@/lib/brands";
+import { adjustInventoryInTransaction } from "@/lib/inventory";
 import { prisma } from "@/lib/prisma";
 
 type AdminSection =
@@ -683,11 +683,11 @@ const normalizeHomepageSectionConfig = (
 const ensureExistingCategory = async (categoryId: string) => {
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
-    select: { id: true },
+    select: { id: true, isActive: true, archivedAt: true },
   });
 
-  if (!category) {
-    throw new Error("La categorie selectionnee n'existe plus.");
+  if (!category || category.archivedAt || !category.isActive) {
+    throw new Error("La categorie selectionnee n'est plus disponible.");
   }
 };
 
@@ -798,6 +798,8 @@ const deriveProductStatus = (discount: number, featured: boolean): ProductStatus
 const getValidCategoryRecords = async (categoryIds: string[]) => {
   const categories = await prisma.category.findMany({
     where: {
+      isActive: true,
+      archivedAt: null,
       id: {
         in: categoryIds,
       },
@@ -816,7 +818,10 @@ const getValidCategoryRecords = async (categoryIds: string[]) => {
   return categories;
 };
 
-const getValidBrandRecord = async (brandId: string | null) => {
+const getValidBrandRecord = async (
+  brandId: string | null,
+  options: { allowArchivedId?: string | null } = {}
+) => {
   if (!brandId) {
     return null;
   }
@@ -829,11 +834,16 @@ const getValidBrandRecord = async (brandId: string | null) => {
       id: true,
       slug: true,
       title: true,
+      archivedAt: true,
     },
   });
 
   if (!brand) {
     throw new Error("La marque selectionnee est introuvable.");
+  }
+
+  if (brand.archivedAt && brand.id !== options.allowArchivedId) {
+    throw new Error("Une marque archivee ne peut pas etre associee a un nouveau produit.");
   }
 
   return brand;
@@ -954,7 +964,8 @@ export async function updateCategoryAction(formData: FormData) {
 }
 
 export async function deleteCategoryAction(formData: FormData) {
-  return withAction("categories", "Impossible de supprimer cette categorie.", async () => {
+  return withAction("categories", "Impossible d'archiver cette categorie.", async () => {
+    const identity = await requireAdmin();
     const id = requireId(readText(formData, "id"), "Categorie introuvable.");
     const category = await prisma.category.findUnique({
       where: {
@@ -962,7 +973,7 @@ export async function deleteCategoryAction(formData: FormData) {
       },
       select: {
         slug: true,
-        imageUrl: true,
+        archivedAt: true,
       },
     });
 
@@ -970,159 +981,298 @@ export async function deleteCategoryAction(formData: FormData) {
       throw new Error("Cette categorie n'existe plus.");
     }
 
-    await prisma.category.delete({
+    if (category.archivedAt) {
+      throw new Error("Cette categorie est deja archivee.");
+    }
+
+    await prisma.category.update({
       where: {
         id,
       },
+      data: {
+        archivedAt: new Date(),
+        archivedBy: identity.userId || identity.email || "admin",
+        isActive: false,
+        featured: false,
+      },
     });
-
-    await deleteStoredAsset(category.imageUrl);
     refreshStorefront([`/category/${category.slug}`]);
     adminRedirect("categories", {
-      status: "Categorie supprimee.",
+      status: "Categorie archivee. Les associations produits sont conservees.",
     });
   });
 }
 
-export async function createBrandAction(formData: FormData) {
-  return withAction("brands", "Impossible d'ajouter cette marque.", async () => {
-    const title = readText(formData, "title");
-    const description = readOptionalText(formData, "description");
-    const imageFile = formData.get("imageFile");
+export type BrandMutationState = {
+  success: boolean;
+  message: string;
+  revision: number;
+};
 
-    if (!title) {
-      throw new Error("Veuillez saisir le nom de la marque.");
-    }
+const brandMutationError = (message: string, revision: number): BrandMutationState => ({
+  success: false,
+  message,
+  revision,
+});
 
-    const slug = await generateUniqueSlug("brand", title);
-    let uploadedImage: UploadedAsset | null = null;
+export async function saveBrandAction(
+  previousState: BrandMutationState,
+  formData: FormData
+): Promise<BrandMutationState> {
+  await requireAdmin();
 
+  const revision = previousState.revision + 1;
+  const id = readOptionalText(formData, "id");
+  const title = readText(formData, "title");
+  const description = readOptionalText(formData, "description");
+  const imageFile = formData.get("imageFile");
+  const isActive = readBoolean(formData, "isActive");
+  const removeImage = readBoolean(formData, "removeImage");
+
+  if (!title) {
+    return brandMutationError("Le nom de la marque est obligatoire.", revision);
+  }
+
+  if (title.length > 100) {
+    return brandMutationError("Le nom de la marque ne peut pas depasser 100 caracteres.", revision);
+  }
+
+  if (description && description.length > 500) {
+    return brandMutationError("La description ne peut pas depasser 500 caracteres.", revision);
+  }
+
+  let existingBrand: {
+    slug: string;
+    imageUrl: string | null;
+    archivedAt: Date | null;
+  } | null = null;
+
+  if (id) {
     try {
-      if (isUploadedFile(imageFile)) {
-        uploadedImage = await saveOptimizedImage(imageFile, "brands", title);
-      }
-
-      await prisma.brand.create({
-        data: {
-          title,
-          slug,
-          description,
-          imageUrl: uploadedImage?.url || null,
+      existingBrand = await prisma.brand.findUnique({
+        where: { id },
+        select: {
+          slug: true,
+          imageUrl: true,
+          archivedAt: true,
         },
       });
-    } catch (error) {
-      if (uploadedImage?.url) {
-        await deleteStoredAsset(uploadedImage.url);
-      }
-
-      throw error;
+    } catch {
+      return brandMutationError(
+        "Impossible de charger cette marque. Reessayez dans quelques instants.",
+        revision
+      );
     }
-
-    refreshStorefront([`/brand/${slug}`]);
-    adminRedirect("brands", {
-      status: "Marque ajoutee.",
-    });
-  });
-}
-
-export async function updateBrandAction(formData: FormData) {
-  return withAction("brands", "Impossible de modifier cette marque.", async () => {
-    const id = requireId(readText(formData, "id"), "Marque introuvable.");
-    const title = readText(formData, "title");
-    const description = readOptionalText(formData, "description");
-    const imageFile = formData.get("imageFile");
-
-    if (!title) {
-      throw new Error("Veuillez saisir le nom de la marque.");
-    }
-
-    const existingBrand = await prisma.brand.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        slug: true,
-        imageUrl: true,
-      },
-    });
 
     if (!existingBrand) {
-      throw new Error("Cette marque n'existe plus.");
+      return brandMutationError("Cette marque n'existe plus.", revision);
     }
 
-    let uploadedImage: UploadedAsset | null = null;
-
-    try {
-      if (isUploadedFile(imageFile)) {
-        uploadedImage = await saveOptimizedImage(imageFile, "brands", title);
-      }
-
-      await prisma.brand.update({
-        where: {
-          id,
-        },
-        data: {
-          title,
-          description,
-          ...(uploadedImage?.url
-            ? {
-                imageUrl: uploadedImage.url,
-              }
-            : {}),
-        },
-      });
-    } catch (error) {
-      if (uploadedImage?.url) {
-        await deleteStoredAsset(uploadedImage.url);
-      }
-
-      throw error;
+    if (existingBrand.archivedAt) {
+      return brandMutationError(
+        "Desarchivez cette marque avant de modifier ses informations.",
+        revision
+      );
     }
+  }
 
-    if (uploadedImage?.url && existingBrand.imageUrl) {
-      await deleteStoredAsset(existingBrand.imageUrl);
-    }
+  let candidates: Array<{ id: string; title: string }>;
 
-    refreshStorefront([`/brand/${existingBrand.slug}`]);
-    adminRedirect("brands", {
-      status: "Marque mise a jour.",
+  try {
+    candidates = await prisma.brand.findMany({
+      select: { id: true, title: true },
     });
-  });
+  } catch {
+    return brandMutationError(
+      "Impossible de verifier les doublons. La marque n'a pas ete enregistree.",
+      revision
+    );
+  }
+  const preliminaryDuplicate = findSimilarBrand(title, candidates, id || undefined);
+
+  if (preliminaryDuplicate) {
+    return brandMutationError(
+      `Une marque similaire existe deja : ${preliminaryDuplicate.title}.`,
+      revision
+    );
+  }
+
+  let slug: string;
+
+  try {
+    slug = id && existingBrand ? existingBrand.slug : await generateUniqueSlug("brand", title);
+  } catch {
+    return brandMutationError(
+      "Impossible de preparer cette marque. Reessayez dans quelques instants.",
+      revision
+    );
+  }
+  let uploadedImage: UploadedAsset | null = null;
+
+  try {
+    if (isUploadedFile(imageFile)) {
+      uploadedImage = await saveOptimizedImage(imageFile, "brands", title);
+    }
+
+    await prisma.$transaction(
+      async (tx) => {
+        const transactionCandidates = await tx.brand.findMany({
+          select: { id: true, title: true },
+        });
+        const duplicate = findSimilarBrand(title, transactionCandidates, id || undefined);
+
+        if (duplicate) {
+          throw new Error(`Une marque similaire existe deja : ${duplicate.title}.`);
+        }
+
+        if (id) {
+          await tx.brand.update({
+            where: { id },
+            data: {
+              title,
+              description,
+              isActive,
+              ...(uploadedImage?.url
+                ? { imageUrl: uploadedImage.url }
+                : removeImage
+                  ? { imageUrl: null }
+                  : {}),
+            },
+          });
+        } else {
+          await tx.brand.create({
+            data: {
+              title,
+              slug,
+              description,
+              imageUrl: uploadedImage?.url || null,
+              isActive,
+            },
+          });
+        }
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
+  } catch (error) {
+    if (uploadedImage?.url) {
+      await deleteStoredAsset(uploadedImage.url);
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return brandMutationError(
+        "Une autre modification a eu lieu au meme moment. Verifiez la marque puis reessayez.",
+        revision
+      );
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return brandMutationError(
+        "Une marque avec ce nom ou cet identifiant existe deja.",
+        revision
+      );
+    }
+
+    return brandMutationError(getActionErrorMessage(error, "Impossible d'enregistrer cette marque."), revision);
+  }
+
+  if ((uploadedImage?.url || removeImage) && existingBrand?.imageUrl) {
+    await deleteStoredAsset(existingBrand.imageUrl);
+  }
+
+  refreshStorefront([`/brand/${slug}`]);
+
+  return {
+    success: true,
+    message: id ? "Marque mise a jour." : "Marque ajoutee.",
+    revision,
+  };
 }
 
-export async function deleteBrandAction(formData: FormData) {
-  return withAction("brands", "Impossible de supprimer cette marque.", async () => {
+export async function setBrandActiveAction(formData: FormData) {
+  return withAction("brands", "Impossible de modifier le statut de cette marque.", async () => {
     const id = requireId(readText(formData, "id"), "Marque introuvable.");
+    const isActive = readText(formData, "isActive") === "true";
     const brand = await prisma.brand.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        slug: true,
-        imageUrl: true,
-      },
+      where: { id },
+      select: { slug: true, archivedAt: true },
     });
 
     if (!brand) {
       throw new Error("Cette marque n'existe plus.");
     }
 
-    await prisma.brand.delete({
-      where: {
-        id,
-      },
-    });
+    if (brand.archivedAt) {
+      throw new Error("Desarchivez la marque avant de modifier son statut.");
+    }
 
-    await deleteStoredAsset(brand.imageUrl);
+    await prisma.brand.update({ where: { id }, data: { isActive } });
     refreshStorefront([`/brand/${brand.slug}`]);
     adminRedirect("brands", {
-      status: "Marque supprimee.",
+      status: isActive ? "Marque activee." : "Marque desactivee.",
+    });
+  });
+}
+
+export async function archiveBrandAction(formData: FormData) {
+  return withAction("brands", "Impossible d'archiver cette marque.", async () => {
+    const identity = await requireAdmin();
+    const id = requireId(readText(formData, "id"), "Marque introuvable.");
+    const brand = await prisma.brand.findUnique({
+      where: { id },
+      select: { slug: true, archivedAt: true },
+    });
+
+    if (!brand) {
+      throw new Error("Cette marque n'existe plus.");
+    }
+
+    if (brand.archivedAt) {
+      throw new Error("Cette marque est deja archivee.");
+    }
+
+    await prisma.brand.update({
+      where: { id },
+      data: {
+        archivedAt: new Date(),
+        archivedBy: identity.userId,
+        isActive: false,
+      },
+    });
+    refreshStorefront([`/brand/${brand.slug}`]);
+    adminRedirect("brands", { status: "Marque archivee. Ses produits sont conserves." });
+  });
+}
+
+export async function unarchiveBrandAction(formData: FormData) {
+  return withAction("brands", "Impossible de desarchiver cette marque.", async () => {
+    const id = requireId(readText(formData, "id"), "Marque introuvable.");
+    const brand = await prisma.brand.findUnique({
+      where: { id },
+      select: { slug: true, archivedAt: true },
+    });
+
+    if (!brand) {
+      throw new Error("Cette marque n'existe plus.");
+    }
+
+    if (!brand.archivedAt) {
+      throw new Error("Cette marque n'est pas archivee.");
+    }
+
+    await prisma.brand.update({
+      where: { id },
+      data: { archivedAt: null, archivedBy: null },
+    });
+    refreshStorefront([`/brand/${brand.slug}`]);
+    adminRedirect("brands", {
+      status: "Marque desarchivee. Elle reste inactive jusqu'a sa reactivation.",
     });
   });
 }
 
 export async function createProductAction(formData: FormData) {
   return withAction("products", "Impossible d'ajouter ce produit.", async () => {
+    const identity = await requireAdmin();
     const name = readText(formData, "name");
     const description = readOptionalText(formData, "description");
     const price = readDecimal(formData, "price", { min: 0.01 });
@@ -1180,10 +1330,12 @@ export async function createProductAction(formData: FormData) {
             regularPrice,
             salePrice,
             discount,
-            stock,
-            lastRestockedAt: stock > 0 ? new Date() : null,
+            stock: 0,
+            lifecycleStatus: "ACTIVE",
+            isActive: true,
             status: deriveProductStatus(discount, isFeatured),
             isFeatured,
+            isPromotion: discount > 0,
             brandId: brand?.id || null,
           },
           select: {
@@ -1206,6 +1358,21 @@ export async function createProductAction(formData: FormData) {
             sortOrder: index,
           })),
         });
+
+        if (stock > 0) {
+          await adjustInventoryInTransaction(tx, {
+            productId: product.id,
+            quantityDelta: stock,
+            reason: "INITIAL_BALANCE",
+            actor: {
+              userId: identity.userId,
+              email: identity.email,
+              name: identity.displayName,
+            },
+            note: "Stock initial à la création (formulaire historique)",
+            idempotencyKey: `product:${product.id}:initial-balance`,
+          });
+        }
       });
     } catch (error) {
       if (uploadedImages.length > 0) {
@@ -1228,6 +1395,7 @@ export async function createProductAction(formData: FormData) {
 
 export async function updateProductAction(formData: FormData) {
   return withAction("products", "Impossible de modifier ce produit.", async () => {
+    const identity = await requireAdmin();
     const id = requireId(readText(formData, "id"), "Produit introuvable.");
     const name = readText(formData, "name");
     const description = readOptionalText(formData, "description");
@@ -1265,6 +1433,7 @@ export async function updateProductAction(formData: FormData) {
         lastRestockedAt: true,
         brand: {
           select: {
+            id: true,
             slug: true,
           },
         },
@@ -1272,7 +1441,9 @@ export async function updateProductAction(formData: FormData) {
           select: {
             category: {
               select: {
+                id: true,
                 slug: true,
+                archivedAt: true,
               },
             },
           },
@@ -1294,7 +1465,9 @@ export async function updateProductAction(formData: FormData) {
 
     const [categories, brand] = await Promise.all([
       getValidCategoryRecords(categoryIds),
-      getValidBrandRecord(brandId),
+      getValidBrandRecord(brandId, {
+        allowArchivedId: existingProduct.brand?.id,
+      }),
     ]);
     const regularPrice =
       discount > 0 ? Number((price + (discount * price) / 100).toFixed(2)) : price;
@@ -1321,11 +1494,9 @@ export async function updateProductAction(formData: FormData) {
             regularPrice,
             salePrice,
             discount,
-            stock,
-            lastRestockedAt:
-              stock > existingProduct.stock ? new Date() : existingProduct.lastRestockedAt,
             status: deriveProductStatus(discount, isFeatured),
             isFeatured,
+            isPromotion: discount > 0,
             brandId: brand?.id || null,
           },
           select: {
@@ -1336,6 +1507,7 @@ export async function updateProductAction(formData: FormData) {
         await tx.productCategory.deleteMany({
           where: {
             productId: id,
+            category: { archivedAt: null },
           },
         });
 
@@ -1360,6 +1532,21 @@ export async function updateProductAction(formData: FormData) {
               altText: name,
               sortOrder: index,
             })),
+          });
+        }
+
+        const stockDelta = stock - existingProduct.stock;
+        if (stockDelta !== 0) {
+          await adjustInventoryInTransaction(tx, {
+            productId: id,
+            quantityDelta: stockDelta,
+            reason: "MANUAL_ADJUSTMENT",
+            actor: {
+              userId: identity.userId,
+              email: identity.email,
+              name: identity.displayName,
+            },
+            note: "Ajustement depuis le formulaire produit historique",
           });
         }
       });
@@ -1389,7 +1576,8 @@ export async function updateProductAction(formData: FormData) {
 }
 
 export async function deleteProductAction(formData: FormData) {
-  return withAction("products", "Impossible de supprimer ce produit.", async () => {
+  return withAction("products", "Impossible d'archiver ce produit.", async () => {
+    const identity = await requireAdmin();
     const id = requireId(readText(formData, "id"), "Produit introuvable.");
     const product = await prisma.product.findUnique({
       where: {
@@ -1411,11 +1599,7 @@ export async function deleteProductAction(formData: FormData) {
             },
           },
         },
-        images: {
-          select: {
-            url: true,
-          },
-        },
+        lifecycleStatus: true,
       },
     });
 
@@ -1423,23 +1607,28 @@ export async function deleteProductAction(formData: FormData) {
       throw new Error("Ce produit n'existe plus.");
     }
 
-    await prisma.product.delete({
+    if (product.lifecycleStatus === "ARCHIVED") {
+      throw new Error("Ce produit est deja archive.");
+    }
+
+    await prisma.product.update({
       where: {
         id,
       },
-      select: {
-        id: true,
+      data: {
+        lifecycleStatus: "ARCHIVED",
+        isActive: false,
+        archivedAt: new Date(),
+        archivedBy: identity.userId || identity.email || "admin",
       },
     });
-
-    await deleteStoredAssets(product.images.map((image) => image.url));
     refreshStorefront([
       `/product/${product.slug}`,
       ...product.categories.map((item) => `/category/${item.category.slug}`),
       product.brand?.slug ? `/brand/${product.brand.slug}` : null,
     ]);
     adminRedirect("products", {
-      status: "Produit supprime.",
+      status: "Produit archive. L'historique est conserve.",
     });
   });
 }
@@ -2648,163 +2837,15 @@ export async function deleteSiteSocialLinkAction(formData: FormData) {
   });
 }
 
-export async function updateOrderStatusAction(formData: FormData) {
-  return withAction("orders", "Impossible de mettre a jour cette commande.", async () => {
-    const id = requireId(readText(formData, "id"), "Commande introuvable.");
-    const nextStage = readText(formData, "status");
-    const allowedStages = new Set(adminOrderStageOptions.map((option) => option.value));
-
-    if (!allowedStages.has(nextStage as (typeof adminOrderStageOptions)[number]["value"])) {
-      throw new Error("Le statut choisi n'est pas valide.");
-    }
-
-    const order = await prisma.order.findUnique({
-      where: { id },
-      select: {
-        status:        true,
-        paymentMethod: true,
-        paymentStatus: true,
-        totalPrice:    true,
-        userId:        true,
-      },
-    });
-
-    if (!order) {
-      throw new Error("Cette commande n'existe plus.");
-    }
-
-    const status = adminStageToOrderStatus(
-      nextStage as (typeof adminOrderStageOptions)[number]["value"]
-    );
-
-    const isTransitionToDelivered =
-      status === "delivered" && order.status !== "delivered";
-
-    await prisma.order.update({
-      where: { id },
-      data: {
-        status,
-        deliveryStatus: orderStatusToDeliveryStatus(status),
-        ...(status !== order.status ? { statusChangedAt: new Date() } : {}),
-        // COD : mark payment as paid when delivered
-        ...(isTransitionToDelivered &&
-        order.paymentMethod === "cod" &&
-        order.paymentStatus !== "paid"
-          ? { paymentStatus: "paid" }
-          : {}),
-      },
-    });
-
-    // ── Award loyalty points on delivery (all payment methods) ──
-    // Triggered only once : when transitioning TO "delivered"
-    if (isTransitionToDelivered && order.userId) {
-      const { calculateEarnedPoints, getTierFromPoints } = await import("@/lib/loyalty");
-      const earned = calculateEarnedPoints(Number(order.totalPrice));
-      if (earned > 0) {
-        const updated = await prisma.user.update({
-          where: { id: order.userId },
-          data:  { loyaltyPoints: { increment: earned } },
-          select: { loyaltyPoints: true },
-        });
-        await prisma.user.update({
-          where: { id: order.userId },
-          data:  { loyaltyTier: getTierFromPoints(updated.loyaltyPoints) },
-          select: { id: true },
-        });
-      }
-    }
-
-    refreshStorefront(["/orders"]);
-    adminRedirect("orders", {
-      status: "Statut de commande mis a jour.",
-    });
-  });
-}
-
-// Silent variant: revalidates but does NOT redirect — used by the order dialog
-// so the client can handle refresh/close in-place without a full navigation.
-export async function updateOrderStatusSilentAction(
-  _prev: { success: boolean; error?: string } | null,
-  formData: FormData
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    await requireAdmin();
-
-    const id = requireId(readText(formData, "id"), "Commande introuvable.");
-    const nextStage = readText(formData, "status");
-    const allowedStages = new Set(adminOrderStageOptions.map((option) => option.value));
-
-    if (!allowedStages.has(nextStage as (typeof adminOrderStageOptions)[number]["value"])) {
-      return { success: false, error: "Le statut choisi n'est pas valide." };
-    }
-
-    const order = await prisma.order.findUnique({
-      where: { id },
-      select: {
-        status:        true,
-        paymentMethod: true,
-        paymentStatus: true,
-        totalPrice:    true,
-        userId:        true,
-      },
-    });
-
-    if (!order) {
-      return { success: false, error: "Cette commande n'existe plus." };
-    }
-
-    const status = adminStageToOrderStatus(
-      nextStage as (typeof adminOrderStageOptions)[number]["value"]
-    );
-
-    const isTransitionToDelivered = status === "delivered" && order.status !== "delivered";
-
-    await prisma.order.update({
-      where: { id },
-      data: {
-        status,
-        deliveryStatus: orderStatusToDeliveryStatus(status),
-        ...(status !== order.status ? { statusChangedAt: new Date() } : {}),
-        ...(isTransitionToDelivered &&
-        order.paymentMethod === "cod" &&
-        order.paymentStatus !== "paid"
-          ? { paymentStatus: "paid" }
-          : {}),
-      },
-    });
-
-    if (isTransitionToDelivered && order.userId) {
-      const { calculateEarnedPoints, getTierFromPoints } = await import("@/lib/loyalty");
-      const earned = calculateEarnedPoints(Number(order.totalPrice));
-      if (earned > 0) {
-        const updated = await prisma.user.update({
-          where: { id: order.userId },
-          data:  { loyaltyPoints: { increment: earned } },
-          select: { loyaltyPoints: true },
-        });
-        await prisma.user.update({
-          where: { id: order.userId },
-          data:  { loyaltyTier: getTierFromPoints(updated.loyaltyPoints) },
-          select: { id: true },
-        });
-      }
-    }
-
-    refreshStorefront(["/orders"]);
-    return { success: true };
-  } catch (error) {
-    if (isRedirectSignal(error)) throw error;
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Erreur inconnue.",
-    };
-  }
-}
-
 export async function resetAllDataAction() {
   await requireAdmin();
 
   await prisma.$transaction(async (tx) => {
+    await tx.loyaltyRefundEvent.deleteMany({});
+    await tx.loyaltyTransaction.deleteMany({});
+    await tx.loyaltyRewardRedemption.deleteMany({});
+    await tx.customerQualityIssue.deleteMany({});
+    await tx.orderReturn.deleteMany({});
     // Delete all order items first (foreign key constraint)
     await tx.orderItem.deleteMany({});
     // Delete all orders

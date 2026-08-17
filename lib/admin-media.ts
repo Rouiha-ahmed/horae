@@ -8,6 +8,9 @@ export type UploadDirectory = "brands" | "products" | "categories" | "homepage";
 
 const IMAGE_ROOT = path.join(process.cwd(), "public", "static-assets");
 const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
+const MAX_BRAND_LOGO_BYTES = 2 * 1024 * 1024;
+const BRAND_LOGO_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const BRAND_LOGO_FORMATS = new Set(["png", "jpeg", "webp"]);
 
 const IMAGE_RULES: Record<
   UploadDirectory,
@@ -43,12 +46,50 @@ export const saveOptimizedImage = async (
   directory: UploadDirectory,
   baseName: string
 ) => {
-  if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
-    throw new Error("Chaque image doit faire moins de 5 Mo.");
+  const maxBytes = directory === "brands" ? MAX_BRAND_LOGO_BYTES : MAX_IMAGE_UPLOAD_BYTES;
+
+  if (file.size > maxBytes) {
+    throw new Error(
+      directory === "brands"
+        ? "Le logo doit faire moins de 2 Mo."
+        : "Chaque image doit faire moins de 5 Mo."
+    );
   }
 
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Le fichier selectionne doit etre une image.");
+  if (
+    !file.type.startsWith("image/") ||
+    (directory === "brands" && !BRAND_LOGO_MIME_TYPES.has(file.type))
+  ) {
+    throw new Error(
+      directory === "brands"
+        ? "Le logo doit etre au format PNG, JPG ou WebP."
+        : "Le fichier selectionne doit etre une image."
+    );
+  }
+
+  const sourceBuffer = Buffer.from(await file.arrayBuffer());
+  let metadata: Awaited<ReturnType<ReturnType<typeof sharp>["metadata"]>>;
+
+  try {
+    metadata = await sharp(sourceBuffer).metadata();
+  } catch {
+    throw new Error("Le fichier image est invalide ou endommage.");
+  }
+
+  if (!metadata.width || !metadata.height) {
+    throw new Error("Les dimensions de l'image ne peuvent pas etre verifiees.");
+  }
+
+  if (directory === "brands" && (!metadata.format || !BRAND_LOGO_FORMATS.has(metadata.format))) {
+    throw new Error("Le contenu du logo ne correspond pas a un format PNG, JPG ou WebP valide.");
+  }
+
+  if (directory === "brands" && (metadata.width < 32 || metadata.height < 16)) {
+    throw new Error("Le logo est trop petit. Utilisez une image d'au moins 32 x 16 px.");
+  }
+
+  if (metadata.width * metadata.height > 40_000_000) {
+    throw new Error("Les dimensions de l'image sont trop importantes.");
   }
 
   const safeBaseName = baseName
@@ -62,7 +103,7 @@ export const saveOptimizedImage = async (
   const rule = IMAGE_RULES[directory];
   const targetDirectory = path.join(IMAGE_ROOT, directory);
   const thumbnailsDirectory = path.join(targetDirectory, "thumbs");
-  const optimizedBuffer = await sharp(Buffer.from(await file.arrayBuffer()))
+  const optimizedBuffer = await sharp(sourceBuffer)
     .rotate()
     .resize({
       width: rule.maxWidth,
