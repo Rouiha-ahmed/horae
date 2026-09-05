@@ -1,6 +1,6 @@
 # HORAE
 
-HORAE is a premium e-commerce experience for beauty, wellness, and parapharmacy products in Morocco. The storefront combines a cinematic navy-and-blue visual system with a complete shopping journey, customer accounts, loyalty rewards, order management, and an administration workspace.
+HORAE is a premium e-commerce experience for watches products in Morocco. The storefront combines a cinematic navy-and-blue visual system with a complete shopping journey, customer accounts, loyalty rewards, order management, and an administration workspace.
 
 The interface is in French and is fully responsive across desktop, tablet, and mobile devices.
 
