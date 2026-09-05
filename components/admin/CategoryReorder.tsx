@@ -44,7 +44,6 @@ export default function CategoryReorder({
       // reload to reflect changes
       window.location.reload();
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error(e);
       alert("Failed to save order");
       setSaving(false);

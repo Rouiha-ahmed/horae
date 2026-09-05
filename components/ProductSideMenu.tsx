@@ -37,7 +37,7 @@ const ProductSideMenu = ({
     >
       <div
         onClick={hasHydrated ? handleFavorite : undefined}
-        className={`rounded-full border border-shop_light_green/25 p-2 hover:bg-shop_dark_green hover:text-white hoverEffect ${existingProduct ? "bg-shop_dark_green text-white" : "bg-white/92 text-lightColor"}`}
+        className={`rounded-full border p-2 backdrop-blur-sm hover:border-shop_light_green hover:bg-shop_light_green hover:text-[#02101b] hoverEffect ${existingProduct ? "border-shop_light_green bg-shop_light_green text-[#02101b]" : "border-white/10 bg-black/35 text-white/60"}`}
       >
         <Heart size={15} />
       </div>

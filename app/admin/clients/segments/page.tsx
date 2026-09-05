@@ -37,7 +37,7 @@ export default async function CustomerSegmentsPage() {
               <div><p className="text-[10px] text-slate-400">Cycle moyen</p><p className="mt-1 text-xs font-semibold">{customer.averageIntervalDays ? `${Math.round(customer.averageIntervalDays)} jours` : "Historique court"}</p></div>
               <div><p className="text-[10px] text-slate-400">Depuis l’achat</p><p className="mt-1 text-xs font-semibold text-orange-700">{customer.daysSinceLastPurchase ? `${customer.daysSinceLastPurchase} jours` : "—"}</p></div>
               <div><p className="text-[10px] text-slate-400">Achat attendu</p><p className="mt-1 text-xs font-semibold">{customer.expectedNextPurchaseAt ? date.format(customer.expectedNextPurchaseAt) : "—"}</p></div>
-              <a href={`mailto:${encodeURIComponent(customer.email)}?subject=${encodeURIComponent("Vous nous manquez chez Zayna")}`} className="inline-flex h-8 items-center justify-center gap-1 rounded-xl border border-blue-100 px-3 text-[10px] font-semibold text-blue-600">Relancer <ArrowRight className="h-3 w-3" /></a>
+              <a href={`mailto:${encodeURIComponent(customer.email)}?subject=${encodeURIComponent("Vous nous manquez chez HORAE")}`} className="inline-flex h-8 items-center justify-center gap-1 rounded-xl border border-blue-100 px-3 text-[10px] font-semibold text-blue-600">Relancer <ArrowRight className="h-3 w-3" /></a>
             </article>
           ))}</div> : <p className="px-5 py-14 text-center text-sm text-slate-400">Aucun client à relancer actuellement.</p>}
         </section>

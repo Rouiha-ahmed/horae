@@ -43,16 +43,16 @@ const CategoryProducts = ({ categories, slug, initialProducts = [] }: Props) => 
   const showInlineLoading = isPending || currentSlug !== slug;
 
   return (
-    <div className="flex flex-col gap-6 md:flex-row md:items-start">
+    <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-10">
       {/* Sidebar */}
-      <aside className="w-full shrink-0 md:w-52">
-        <div className="overflow-hidden rounded-[20px] border border-shop_light_green/20 bg-white shadow-[0_8px_28px_-18px_rgba(22,46,110,0.18)]">
-          <div className="border-b border-shop_light_green/15 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-shop_light_green">
+      <aside className="w-full shrink-0 md:sticky md:top-32 md:w-56">
+        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/72">
+          <div className="border-b border-white/10 px-5 py-4">
+            <p className="horae-kicker text-shop_light_green">
               Categories
             </p>
           </div>
-          <nav className="p-2">
+          <nav className="p-3">
             {categories.map((item) => {
               const Icon = getCategoryIcon(item.title || "");
               const categorySlug = item.slug?.current || "";
@@ -65,16 +65,16 @@ const CategoryProducts = ({ categories, slug, initialProducts = [] }: Props) => 
                   onClick={() => handleCategoryChange(categorySlug)}
                   disabled={isPending}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-left text-sm font-semibold capitalize transition-all duration-200",
+                    "flex w-full items-center gap-2.5 border-b border-white/8 px-2 py-3 text-left text-xs font-semibold capitalize transition-all duration-200",
                     isActive
-                      ? "bg-shop_btn_dark_green text-white shadow-[0_6px_18px_-8px_rgba(22,46,110,0.5)]"
-                      : "text-shop_dark_green hover:bg-shop_light_green/10 hover:text-shop_btn_dark_green"
+                      ? "border-shop_light_green text-shop_dark_green"
+                      : "text-lightColor hover:border-shop_light_green/50 hover:text-shop_dark_green"
                   )}
                 >
                   <Icon
                     className={cn(
                       "h-4 w-4 shrink-0",
-                      isActive ? "text-shop_light_green" : "text-shop_light_green/70"
+                      isActive ? "text-shop_light_green" : "text-white/30"
                     )}
                   />
                   {item.title}
@@ -89,7 +89,7 @@ const CategoryProducts = ({ categories, slug, initialProducts = [] }: Props) => 
       <div className="min-w-0 flex-1">
         {showInlineLoading && (
           <div className="mb-4 flex justify-center md:justify-start">
-            <div className="inline-flex items-center gap-2 rounded-full border border-shop_light_green/30 bg-white px-4 py-1.5 text-xs font-medium text-shop_dark_green shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-shop_light_green/30 bg-[#071522]/95 px-4 py-1.5 text-xs font-medium text-shop_dark_green shadow-sm">
               <Loader2 className="h-3.5 w-3.5 animate-spin text-shop_light_green" />
               Chargement...
             </div>
@@ -99,7 +99,7 @@ const CategoryProducts = ({ categories, slug, initialProducts = [] }: Props) => 
         {initialProducts.length > 0 ? (
           <div
             className={cn(
-              "grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+              "grid grid-cols-2 gap-x-3 gap-y-9 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
               showInlineLoading ? "opacity-50" : "opacity-100"
             )}
           >

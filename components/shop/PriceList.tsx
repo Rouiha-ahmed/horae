@@ -17,19 +17,19 @@ interface Props {
 }
 const PriceList = ({ selectedPrice, setSelectedPrice }: Props) => {
   return (
-    <div className="w-full bg-white p-5">
-      <Title className="text-base font-black">Prix</Title>
+    <div className="w-full border-t border-white/10 bg-transparent p-5">
+      <Title className="horae-kicker font-sans text-shop_light_green">Prix</Title>
       <RadioGroup className="mt-2 space-y-1" value={selectedPrice || ""}>
         {priceArray.map((price, index) => (
           <div
             key={index}
             onClick={() => setSelectedPrice(price.value)}
-            className="flex items-center space-x-2 hover:cursor-pointer"
+            className="flex items-center space-x-2 border-b border-white/8 py-2 text-xs hover:cursor-pointer"
           >
             <RadioGroupItem
               value={price.value}
               id={price.value}
-              className="rounded-sm"
+              className="border-white/25 text-shop_light_green"
             />
             <Label
               htmlFor={price.value}

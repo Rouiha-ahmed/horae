@@ -14,7 +14,7 @@ export default function SocialLinksRenderer({ section }: SocialLinksRendererProp
   }
 
   return (
-    <section id={section.key} className="scroll-mt-28 rounded-[16px] border border-shop_light_green/24 bg-white p-6 shadow-[0_18px_38px_-32px_rgba(22,46,110,0.45)] md:p-8">
+    <section id={section.key} className="scroll-mt-28 rounded-[28px] border border-white/10 bg-[#071522]/70 p-6 shadow-[0_24px_55px_-38px_rgba(56,189,248,0.45)] md:p-8">
       <HomeSectionHeading title={section.title} subtitle={section.subtitle} />
       <SocialMedia
         links={links}

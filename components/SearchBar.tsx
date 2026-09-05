@@ -40,12 +40,12 @@ const SearchBarFallback = ({
       {showDesktopSearch ? (
         <div className={cn("relative hidden md:block", className)}>
           {alwaysOpenDesktop ? (
-            <div className="flex h-12 w-full items-center rounded-xl border border-shop_light_green/35 bg-white px-4 text-sm text-lightColor/80 shadow-[0_10px_20px_-18px_rgba(31,60,136,0.48)]">
+            <div className="flex h-11 w-full items-center rounded-full border border-white/15 bg-white/[0.04] px-4 text-xs text-white/40">
               <Search className="mr-2 h-4.5 w-4.5" />
               Rechercher un produit...
             </div>
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-shop_light_green/45 bg-white/85 text-lightColor shadow-[0_10px_20px_-18px_rgba(31,60,136,0.6)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/55">
               <Search className="h-4.5 w-4.5" />
             </div>
           )}
@@ -53,7 +53,7 @@ const SearchBarFallback = ({
       ) : null}
 
       {showMobileSearch ? (
-        <div className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-shop_light_green/45 bg-white/90 text-lightColor shadow-[0_10px_26px_-22px_rgba(31,60,136,0.8)]">
+        <div className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/55">
           <Search className="h-4.5 w-4.5" />
         </div>
       ) : null}
@@ -283,8 +283,8 @@ const SearchBarContent = ({
       <div
         className={
           mode === "desktop"
-            ? "absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl border border-shop_light_green/35 bg-white/95 shadow-[0_24px_44px_-30px_rgba(22,46,110,0.95)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-200"
-            : "mt-2 overflow-hidden rounded-2xl border border-shop_light_green/35 bg-white shadow-[0_20px_36px_-30px_rgba(22,46,110,0.85)]"
+            ? "absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-2xl border border-shop_light_green/30 bg-[#071522]/96 shadow-[0_24px_44px_-30px_rgba(22,133,194,0.95)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200"
+            : "mt-2 overflow-hidden rounded-2xl border border-shop_light_green/30 bg-[#071522] shadow-[0_20px_36px_-30px_rgba(22,133,194,0.85)]"
         }
       >
         <div className="max-h-80 overflow-y-auto p-2 scrollbar-hide">
@@ -369,9 +369,9 @@ const SearchBarContent = ({
         >
           <form
             onSubmit={onDesktopSubmit}
-            className={`group relative flex h-10 items-center overflow-hidden rounded-lg border bg-white/85 backdrop-blur-md transition-[width,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`group relative flex h-10 items-center overflow-hidden rounded-full border bg-white/[0.04] backdrop-blur-md transition-[width,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               alwaysOpenDesktop
-                ? "h-12 w-full rounded-xl border-shop_light_green/35 px-1 shadow-[0_10px_20px_-16px_rgba(31,60,136,0.45)]"
+                ? "h-11 w-full border-white/15 px-1"
                 : isDesktopOpen
                   ? "w-64 xl:w-80 border-shop_dark_green/35 shadow-[0_12px_24px_-18px_rgba(31,60,136,0.65)]"
                   : "w-10 border-shop_light_green/45 shadow-[0_10px_20px_-18px_rgba(31,60,136,0.6)] hover:border-shop_light_green/80 hover:shadow-[0_10px_20px_-16px_rgba(77,182,198,0.7)]"
@@ -388,7 +388,7 @@ const SearchBarContent = ({
                   goToSearch();
                 }
               }}
-              className="inline-flex h-10 w-10 items-center justify-center text-lightColor hover:text-shop_dark_green hoverEffect"
+              className="inline-flex h-10 w-10 items-center justify-center text-white/55 hover:text-shop_light_green hoverEffect"
               aria-label="Rechercher"
             >
               <Search className="h-4.5 w-4.5 group-hover:scale-105 transition-transform duration-300" />
@@ -406,7 +406,7 @@ const SearchBarContent = ({
                 }
               }}
               placeholder="Rechercher un produit..."
-              className={`h-full bg-transparent text-sm text-darkColor placeholder:text-lightColor/80 outline-none transition-[width,opacity,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`h-full bg-transparent text-xs text-white placeholder:text-white/35 outline-none transition-[width,opacity,padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 alwaysOpenDesktop
                   ? "w-full px-1 pr-20 opacity-100"
                   : isDesktopOpen
@@ -419,8 +419,8 @@ const SearchBarContent = ({
                 type="submit"
                 className={`absolute right-2 inline-flex h-7 w-7 items-center justify-center rounded-md border transition-all duration-300 ${
                   trimmedQuery
-                    ? "border-shop_dark_green/30 bg-shop_dark_green text-white hover:bg-shop_btn_dark_green hover:translate-x-0.5"
-                    : "border-shop_light_green/35 bg-white text-lightColor"
+                    ? "border-shop_light_green bg-shop_light_green text-black hover:bg-transparent hover:text-shop_light_green hover:translate-x-0.5"
+                    : "border-white/15 bg-white/[0.04] text-white/35"
                 }`}
                 aria-label="Lancer la recherche"
               >
@@ -449,7 +449,7 @@ const SearchBarContent = ({
         <button
           type="button"
           onClick={() => setIsMobileOpen(true)}
-          className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-shop_light_green/45 bg-white/90 text-lightColor shadow-[0_10px_26px_-22px_rgba(31,60,136,0.8)] hover:border-shop_light_green hover:text-shop_dark_green hover:shadow-[0_12px_28px_-20px_rgba(77,182,198,0.85)] hoverEffect"
+          className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/70 hover:border-shop_light_green hover:text-shop_light_green hoverEffect"
           aria-label="Ouvrir la recherche"
         >
           <Search className="h-4.5 w-4.5" />
@@ -467,7 +467,7 @@ const SearchBarContent = ({
             }}
             aria-label="Fermer la recherche"
           />
-          <div className="fixed left-4 right-4 top-20 z-[70] md:hidden rounded-2xl border border-shop_light_green/40 bg-white/95 p-3 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="fixed left-4 right-4 top-20 z-[70] rounded-2xl border border-shop_light_green/35 bg-[#071522]/96 p-3 shadow-xl backdrop-blur-xl md:hidden animate-in fade-in zoom-in-95 duration-200">
             <form onSubmit={onMobileSubmit} className="flex items-center gap-2">
               <div className="flex h-10 flex-1 items-center gap-2 rounded-xl border border-shop_light_green/35 px-3">
                 <Search className="h-4 w-4 text-lightColor" />
@@ -491,7 +491,7 @@ const SearchBarContent = ({
               ) : null}
               <button
                 type="submit"
-                className="inline-flex h-10 items-center gap-1 rounded-xl bg-shop_dark_green px-4 text-sm font-semibold text-white hover:bg-shop_btn_dark_green hoverEffect"
+                className="inline-flex h-10 items-center gap-1 rounded-full bg-shop_btn_dark_green px-4 text-sm font-semibold text-white hover:bg-shop_light_green hover:text-[#02101b] hoverEffect"
               >
                 OK
                 <ArrowRight className="h-3.5 w-3.5" />

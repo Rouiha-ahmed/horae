@@ -30,7 +30,7 @@ export default function SortSelect({ value, onChange, total }: Props) {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value as SortOption)}
-          className="appearance-none cursor-pointer rounded-[14px] border border-shop_light_green/30 bg-white py-2 pl-9 pr-9 text-sm font-semibold text-shop_dark_green shadow-[0_4px_14px_-6px_rgba(22,46,110,0.14)] outline-none transition-colors hover:border-shop_light_green/60 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+          className="cursor-pointer appearance-none rounded-full border border-white/12 bg-[#071522] py-2 pl-9 pr-9 text-xs font-semibold text-shop_dark_green outline-none transition-colors hover:border-shop_light_green focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>

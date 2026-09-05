@@ -88,7 +88,7 @@ export default async function AdminOrdersPrintPage({
               <article key={order.id} className="order-print-card rounded-2xl border border-slate-300 p-5">
                 <div className="flex items-start justify-between gap-6 border-b border-slate-200 pb-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Zayna · Bon de traitement</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">HORAE · Bon de traitement</p>
                     <h1 className="mt-2 text-2xl font-bold">#{order.orderNumber.slice(-8).toUpperCase()}</h1>
                     <p className="mt-1 text-xs text-slate-500">{date.format(order.orderDate)}</p>
                   </div>

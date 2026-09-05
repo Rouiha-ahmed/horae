@@ -28,7 +28,7 @@ export default function AdminHeader({
   const hasAlerts = pendingOrders > 0 || lowStockProducts > 0 || expiringPromoCodes > 0;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-black/10 bg-[#F5F5F0]/92 backdrop-blur-md">
       <div className="flex h-12 items-center gap-3 px-4 md:px-6 lg:px-8">
         {/* Mobile menu */}
         <Button
@@ -48,7 +48,7 @@ export default function AdminHeader({
         </span>
 
         <span className="hidden text-slate-300 sm:inline">·</span>
-        <span className="hidden text-xs text-slate-400 sm:inline">Zayna Admin</span>
+        <span className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-shop_light_green sm:inline">HORAE Admin</span>
 
         {/* Spacer */}
         <div className="flex-1" />

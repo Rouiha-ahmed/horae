@@ -50,10 +50,10 @@ export default function AdminShell({
 
   return (
     <div
-      className="min-h-screen text-slate-900"
+      className="horae-admin min-h-screen text-slate-900"
       style={{
         backgroundImage:
-          "radial-gradient(circle at top left, rgba(77, 182, 198, 0.16), transparent 28%), linear-gradient(180deg, #f7fafc 0%, #edf5f7 45%, #f5f7f8 100%)",
+          "radial-gradient(circle at top left, rgba(184, 163, 106, 0.14), transparent 28%), linear-gradient(180deg, #f8f8f3 0%, #f0efe8 100%)",
       }}
     >
       <AdminSidebar
@@ -84,7 +84,7 @@ export default function AdminShell({
           onOpenMobileMenu={() => setMobileOpen(true)}
         />
 
-        <main className="px-4 pb-8 pt-6 md:px-6 lg:px-8">
+        <main className="px-4 pb-10 pt-7 md:px-6 lg:px-8">
           <div className="mx-auto max-w-[1500px]">{children}</div>
         </main>
       </div>

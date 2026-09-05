@@ -2,7 +2,7 @@ import Container from "@/components/Container";
 
 export default function LoyaltyLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-[#04101c] to-[#02060b] pb-20">
       <Container className="py-10">
         {/* page header skeleton */}
         <div className="mb-8 space-y-3">

@@ -69,19 +69,20 @@ export default function HomeNewsletter({
   return (
     <section
       id="newsletter"
-      className="scroll-mt-28 rounded-[16px] border border-shop_light_green/24 bg-white p-6 shadow-[0_18px_38px_-32px_rgba(22,46,110,0.45)] md:p-8"
+      className="scroll-mt-28 rounded-[28px] border border-white/10 bg-[#071522]/65 px-6 py-10 md:px-10 md:py-14"
     >
-      <div className="grid items-start gap-6 md:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid items-end gap-8 md:grid-cols-[1.05fr_0.95fr]">
         <div>
-          <h2 className="text-[1.6rem] font-bold tracking-[-0.02em] text-shop_dark_green md:text-[1.9rem]">
+          <p className="horae-kicker mb-3 text-shop_light_green">Journal privé</p>
+          <h2 className="font-editorial text-[clamp(2.35rem,5vw,4.4rem)] font-light uppercase leading-[0.94] tracking-[-0.055em] text-shop_dark_green">
             {title}
           </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-lightColor">
+          <p className="mt-5 max-w-xl text-sm leading-7 text-lightColor">
             {description}
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-3">
+        <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <label className="sr-only" htmlFor="newsletter-email">
             Adresse e-mail
           </label>
@@ -98,12 +99,12 @@ export default function HomeNewsletter({
             }}
             required
             placeholder={placeholder}
-            className="h-11 w-full rounded-md border border-shop_light_green/35 bg-shop_light_bg/35 px-4 text-sm text-darkColor outline-none transition focus:border-shop_dark_green focus:ring-4 focus:ring-shop_light_green/15"
+            className="h-12 w-full rounded-full border border-white/12 bg-white/[0.035] px-5 text-sm text-darkColor outline-none transition placeholder:text-white/28 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/15"
           />
           <button
             type="submit"
             disabled={status === "loading"}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-shop_dark_green px-5 text-sm font-semibold text-white transition-colors hover:bg-shop_btn_dark_green disabled:pointer-events-none disabled:opacity-70"
+            className="horae-button h-12 disabled:pointer-events-none disabled:opacity-70"
           >
             {status === "loading" ? (
               <>
@@ -116,8 +117,8 @@ export default function HomeNewsletter({
           </button>
           {feedback ? (
             <p
-              className={`text-xs ${status === "success" ? "text-emerald-600" : "text-rose-600"}`}
               role="status"
+              className={`text-xs sm:col-span-2 ${status === "success" ? "text-emerald-700" : "text-rose-700"}`}
             >
               {feedback}
             </p>

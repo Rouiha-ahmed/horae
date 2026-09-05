@@ -66,7 +66,7 @@ export default async function AdminClientsOverviewPage() {
           <div className="flex min-w-[210px] items-center gap-3">
             <Crown className="h-5 w-5 text-amber-500" />
             <div>
-              <p className="text-sm font-bold text-amber-800">Programme de fidélité Zayna</p>
+              <p className="text-sm font-bold text-amber-800">Programme de fidélité HORAE</p>
               <p className="text-[11px] text-amber-700/70">Règles actives et configurables</p>
             </div>
           </div>

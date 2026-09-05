@@ -1,8 +1,8 @@
 "use client";
 
 import { useHydrated } from "@/hooks";
-import { UserButton, useAuth } from "@clerk/nextjs";
-import { LayoutDashboard, Logs, Star } from "lucide-react";
+import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
+import { LayoutDashboard, Logs, Star, UserRound } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import CartIcon from "./CartIcon";
@@ -16,7 +16,7 @@ type NavigationContext = {
 };
 
 const iconButtonClassName =
-  "group relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-shop_light_green/25 bg-white text-lightColor shadow-[0_10px_20px_-18px_rgba(22,46,110,0.5)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-shop_light_green/65 hover:text-shop_dark_green";
+  "group relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] text-white/68 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-shop_light_green/70 hover:bg-shop_light_green hover:text-[#02101b]";
 
 const HeaderDesktopNav = () => {
   const { isLoaded, userId } = useAuth();
@@ -72,6 +72,7 @@ const HeaderDesktopNav = () => {
   return (
     <>
       <div className="hidden items-center gap-2 lg:flex">
+        <SearchBar mode="desktop" />
         <CartIcon className={iconButtonClassName} iconClassName="h-4.5 w-4.5" />
         <FavoriteButton className={iconButtonClassName} iconClassName="h-4.5 w-4.5" />
 
@@ -97,7 +98,7 @@ const HeaderDesktopNav = () => {
         {isAdmin ? (
           <Link
             href="/admin"
-            className="group inline-flex h-10 items-center gap-2 rounded-lg border border-shop_light_green/25 bg-white px-3 text-sm font-semibold text-shop_dark_green shadow-[0_10px_20px_-18px_rgba(22,46,110,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:border-shop_light_green/70"
+            className="group inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-shop_light_green hover:text-shop_light_green"
           >
             <LayoutDashboard className="h-4 w-4" />
             Admin
@@ -106,26 +107,26 @@ const HeaderDesktopNav = () => {
 
         {isAuthReady ? (
           isSignedIn ? (
-            <div className="ml-1 rounded-lg border border-shop_light_green/20 bg-white p-1 shadow-[0_10px_20px_-18px_rgba(22,46,110,0.5)]">
+            <div className="ml-1 rounded-full border border-white/10 bg-white/[0.035] p-0.5">
               <UserButton />
             </div>
           ) : (
-            <SignIn className="h-10 rounded-lg border border-shop_light_green/25 bg-white px-3 text-sm font-semibold text-shop_dark_green shadow-[0_10px_20px_-18px_rgba(22,46,110,0.5)]" />
+            <SignIn className="h-9 rounded-full border border-shop_light_green/40 bg-transparent px-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-white" />
           )
         ) : (
-          <div className="h-10 w-24 rounded-lg border border-shop_light_green/20 bg-white/75" />
+          <div className="h-9 w-20 rounded-full border border-white/10 bg-white/[0.04]" />
         )}
       </div>
 
       <div className="flex items-center gap-2 lg:hidden">
         <SearchBar mode="mobile" />
-        <CartIcon className="h-9 w-9 rounded-xl" iconClassName="h-4 w-4" />
-        <FavoriteButton className="h-9 w-9 rounded-xl" iconClassName="h-4 w-4" />
+        <CartIcon className="h-9 w-9 border-white/15 bg-white/[0.04] text-white/75" iconClassName="h-4 w-4" />
+        <FavoriteButton className="hidden h-9 w-9 border-white/15 bg-white/[0.04] text-white/75 sm:inline-flex" iconClassName="h-4 w-4" />
 
         {isAdmin ? (
           <Link
             href="/admin"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-shop_light_green/35 bg-white/90 text-lightColor"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/70"
           >
             <LayoutDashboard className="h-4 w-4" />
           </Link>
@@ -134,7 +135,7 @@ const HeaderDesktopNav = () => {
         {isSignedIn ? (
           <Link
             href="/orders"
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-shop_light_green/35 bg-white/90 text-lightColor"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/70"
           >
             <Logs className="h-4 w-4" />
             <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-shop_btn_dark_green px-1 text-[10px] font-semibold text-white">
@@ -147,7 +148,7 @@ const HeaderDesktopNav = () => {
           <Link
             href="/loyalty"
             title="Ma carte fidélité"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-shop_light_green/35 bg-white/90 text-lightColor"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/70"
           >
             <Star className="h-4 w-4" />
           </Link>
@@ -157,10 +158,18 @@ const HeaderDesktopNav = () => {
           isSignedIn ? (
             <UserButton />
           ) : (
-            <SignIn className="h-9 rounded-xl px-3 py-1 text-xs" />
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                aria-label="Se connecter"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/70 transition-colors hover:border-shop_light_green hover:text-shop_light_green"
+              >
+                <UserRound className="h-4 w-4" />
+              </button>
+            </SignInButton>
           )
         ) : (
-          <div className="h-9 w-9 rounded-xl border border-shop_light_green/20 bg-white/70" />
+          <div className="h-9 w-9 rounded-full border border-white/10 bg-white/[0.04]" />
         )}
       </div>
     </>

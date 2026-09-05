@@ -35,7 +35,14 @@ const WishListProducts = () => {
   };
 
   return (
-    <Container>
+    <div className="horae-page">
+    <Container className="pb-24">
+      <div className="border-b border-white/10 pb-8 pt-12 md:pb-10 md:pt-16">
+        <p className="horae-kicker text-shop_light_green">Pièces choisies</p>
+        <h1 className="font-editorial mt-3 text-5xl font-light uppercase tracking-[-0.055em] md:text-7xl">
+          Mes favoris.
+        </h1>
+      </div>
       {!hasHydrated ? (
         <div className="flex min-h-100 flex-col items-center justify-center space-y-3 px-4 text-center">
           <Heart className="h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
@@ -50,25 +57,25 @@ const WishListProducts = () => {
         </div>
       ) : safeFavorites.length > 0 ? (
         <>
-          <div className="overflow-x-auto">
+          <div className="mt-10 overflow-x-auto rounded-[24px] border border-white/10 bg-[#071522]/70">
             <table className="w-full border-collapse">
               <thead className="border-b">
-                <tr className="bg-black/5">
-                  <th className="p-2 text-left">Image</th>
-                  <th className="p-2 text-left hidden md:table-cell">
+                <tr className="bg-black/[0.03] text-[9px] uppercase tracking-[0.16em] text-lightColor">
+                  <th className="p-4 text-left">Image</th>
+                  <th className="hidden p-4 text-left md:table-cell">
                     Categorie
                   </th>
-                  <th className="p-2 text-left hidden md:table-cell">Statut</th>
-                  <th className="p-2 text-left">Prix</th>
-                  <th className="p-2 text-center md:text-left">Action</th>
+                  <th className="hidden p-4 text-left md:table-cell">Statut</th>
+                  <th className="p-4 text-left">Prix</th>
+                  <th className="p-4 text-center md:text-left">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {safeFavorites
                   ?.slice(0, visibleProducts)
                   ?.map((product: Product) => (
-                    <tr key={product?._id} className="border-b">
-                      <td className="px-2 py-4 flex items-center gap-2">
+                    <tr key={product?._id} className="border-b border-white/10 last:border-b-0">
+                      <td className="flex items-center gap-3 px-4 py-4">
                         <X
                           onClick={() => {
                             removeFromFavorite(product?._id);
@@ -80,18 +87,18 @@ const WishListProducts = () => {
                         {product?.images && (
                           <Link
                             href={`/product/${product?.slug?.current}`}
-                            className="border rounded-md group hidden md:inline-flex"
+                            className="group hidden overflow-hidden rounded-xl border border-white/10 bg-[#050e17] md:inline-flex"
                           >
                             <Image
                               src={urlFor(product?.images[0]).url()}
                               alt={"product image"}
                               width={80}
                               height={80}
-                              className="rounded-md group-hover:scale-105 hoverEffect h-20 w-20 object-contain"
+                              className="h-20 w-20 object-contain transition-transform duration-500 group-hover:scale-105"
                             />
                           </Link>
                         )}
-                        <p className="line-clamp-1">{product?.name}</p>
+                        <p className="font-editorial line-clamp-1 text-base font-medium uppercase">{product?.name}</p>
                       </td>
                       <td className="p-2 capitalize hidden md:table-cell">
                         {product?.categories && (
@@ -117,7 +124,7 @@ const WishListProducts = () => {
                         <PriceFormatter amount={product?.price} />
                       </td>
                       <td className="p-2">
-                        <AddToCartButton product={product} className="w-full" />
+                        <AddToCartButton product={product} className="w-full rounded-full" />
                       </td>
                     </tr>
                   ))}
@@ -171,14 +178,14 @@ const WishListProducts = () => {
               Les produits ajoutes a votre liste apparaitront ici
             </p>
           </div>
-          <Button asChild>
+            <Button asChild className="horae-button">
             <Link href="/shop">Continuer vos achats</Link>
           </Button>
         </div>
       )}
     </Container>
+    </div>
   );
 };
 
 export default WishListProducts;
-

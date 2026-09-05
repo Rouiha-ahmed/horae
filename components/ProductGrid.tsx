@@ -225,7 +225,7 @@ const ProductGrid = ({
       />
       {showInitialLoader ? (
         <div className="flex flex-col items-center justify-center py-10 min-h-80 space-y-4 text-center bg-gray-100 rounded-lg w-full mt-10">
-          <div className="flex items-center space-x-2 text-blue-600">
+          <div className="flex items-center space-x-2 text-shop_light_green">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Chargement des produits...</span>
           </div>
@@ -256,4 +256,3 @@ const ProductGrid = ({
 };
 
 export default ProductGrid;
-

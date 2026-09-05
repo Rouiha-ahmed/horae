@@ -6,7 +6,6 @@ import {
   validateBulkAction,
   validateOrderAction,
   type OrderAction,
-  type OrderOperatorRole,
   type OrderSlaPolicy,
 } from "@/lib/orders/domain";
 import type { OrderOperator } from "@/lib/orders/permissions";

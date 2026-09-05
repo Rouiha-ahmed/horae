@@ -76,14 +76,14 @@ const cgvArticles = [
 
 const TermsPage = () => {
   return (
-    <div className="bg-gradient-to-b from-shop_light_bg to-white py-10 md:py-14">
+    <div className="horae-page py-14 md:py-20">
       <Container>
         <div className="max-w-5xl mx-auto space-y-8">
-          <div className="bg-white border border-shop_light_green/30 rounded-xl p-6 md:p-8 shadow-sm">
+          <div className="border-y border-shop_light_green/35 py-8 md:py-12">
             <p className="text-xs font-semibold tracking-[0.2em] uppercase text-shop_dark_green">
               Information Legale
             </p>
-            <Title className="mt-2 text-2xl md:text-3xl font-bold">
+            <Title className="mt-2 text-3xl font-light uppercase tracking-[-0.045em] md:text-5xl">
               Conditions generales de vente
             </Title>
             <p className="mt-4 text-sm md:text-base text-gray-700 leading-7">
@@ -112,9 +112,9 @@ const TermsPage = () => {
             {cgvArticles.map((article) => (
               <section
                 key={article.title}
-                className="bg-white border border-shop_light_green/20 rounded-xl p-5 md:p-6"
+                className="border-b border-white/10 py-6 md:py-8"
               >
-                <h2 className="text-lg md:text-xl font-bold text-darkColor">
+                <h2 className="font-editorial text-2xl font-medium uppercase text-darkColor md:text-3xl">
                   {article.title}
                 </h2>
                 <div className="mt-3 space-y-3 text-sm md:text-base text-gray-700 leading-7">

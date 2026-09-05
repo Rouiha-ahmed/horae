@@ -18,7 +18,7 @@ const ImageView = ({ images = [], isStock }: Props) => {
   }
 
   return (
-    <div className="w-full md:w-1/2 space-y-2 md:space-y-4">
+    <div className="w-full space-y-3 md:space-y-4">
       <AnimatePresence mode="wait">
         <motion.div
           key={active._key}
@@ -26,27 +26,27 @@ const ImageView = ({ images = [], isStock }: Props) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-h-137.5 min-h-112.5 border border-darkColor/10 rounded-md group overflow-hidden"
+          className="group relative min-h-[420px] w-full overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_50%_35%,rgba(56,189,248,0.22),transparent_40%),#06111d] md:min-h-[620px]"
         >
           <Image
             src={urlFor(active).url()}
             alt="Produit"
-            width={700}
-            height={700}
+            fill
             priority
+            unoptimized
             sizes="(min-width: 768px) 50vw, 100vw"
-            className={`w-full h-96 max-h-137.5 min-h-125 object-contain group-hover:scale-110 hoverEffect rounded-md ${
+            className={`object-contain p-5 transition-transform duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.025] ${
               isStock === 0 ? "opacity-50" : ""
             }`}
           />
         </motion.div>
       </AnimatePresence>
-      <div className="grid grid-cols-6 gap-2 h-20 md:h-24">
+      <div className="grid h-16 grid-cols-6 gap-2 md:h-20">
         {images.map((image) => (
           <button
             key={image._key}
             onClick={() => setActive(image)}
-            className={`border rounded-md overflow-hidden ${active._key === image._key ? "border-darkColor opacity-100" : "opacity-80"}`}
+            className={`overflow-hidden rounded-xl border bg-white/[0.03] transition-opacity ${active._key === image._key ? "border-shop_light_green opacity-100" : "border-white/10 opacity-50 hover:opacity-90"}`}
           >
             <Image
               src={urlFor(image).url()}
@@ -54,6 +54,7 @@ const ImageView = ({ images = [], isStock }: Props) => {
               width={100}
               height={100}
               sizes="80px"
+              unoptimized
               className="w-full h-auto object-contain"
             />
           </button>
@@ -64,4 +65,3 @@ const ImageView = ({ images = [], isStock }: Props) => {
 };
 
 export default ImageView;
-

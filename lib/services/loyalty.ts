@@ -8,7 +8,6 @@ import {
 import {
   DEFAULT_SEGMENT_RULES,
   DEFAULT_TIER_RULES,
-  applyLedgerMovement,
   calculateEarnedPoints,
   calculateRefundPointReversal,
   classifyCustomerSegment,

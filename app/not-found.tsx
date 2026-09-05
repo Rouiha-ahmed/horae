@@ -4,50 +4,43 @@ import React from "react";
 
 const NotFoundPage = () => {
   return (
-    <div className="bg-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-10 md:py-32">
-      <div className="max-w-md w-full space-y-8">
+    <div className="horae-page flex min-h-screen flex-col items-center justify-center px-5 py-16 text-center">
+      <div className="w-full max-w-xl space-y-10 border-y border-black/12 py-12">
         <div className="text-center">
           <Logo />
 
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Looking for something?
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            We&apos;re sorry. The Web address you entered is not a functioning
-            page on our site.
+          <p className="horae-kicker mt-8 text-shop_light_green">Erreur 404</p>
+          <h1 className="font-editorial mt-4 text-5xl font-medium text-gray-900 md:text-7xl">
+            Le temps s&apos;est arrêté ici.
+          </h1>
+          <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-gray-600">
+            Cette page n&apos;existe plus ou son adresse a changé. Retrouvez la collection HORAE depuis la boutique.
           </p>
         </div>
         <div className="mt-8 space-y-6">
-          <div className="rounded-md shadow-sm space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href="/"
-              className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-md text-white bg-shop_dark_green/80 hover:bg-shop_dark_green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amazonOrangeDark hoverEffect"
+              className="horae-button w-full"
             >
-              Go to Shopcart&apos;s home page
+              Retour à l&apos;accueil
             </Link>
             <Link
-              href="/help"
-              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-semibold rounded-md text-amazonBlue bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amazonBlue"
+              href="/shop"
+              className="horae-outline-button w-full"
             >
-              Help
+              Explorer la boutique
             </Link>
           </div>
         </div>
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Need help? Visit the{" "}
-            <Link
-              href="/help"
-              className="font-medium text-amazon-blue hover:text-amazon-blue-dark"
-            >
-              Help section
-            </Link>{" "}
-            or{" "}
+        <div className="text-center">
+          <p className="text-xs text-gray-500">
+            Besoin d&apos;aide ?{" "}
             <Link
               href="/contact"
-              className="font-medium text-amazon-blue hover:text-amazon-blue-dark"
+              className="font-semibold text-black underline decoration-shop_light_green underline-offset-4"
             >
-              contact us
+              Contactez-nous
             </Link>
           </p>
         </div>

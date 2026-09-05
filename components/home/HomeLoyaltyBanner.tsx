@@ -28,33 +28,33 @@ export default function HomeLoyaltyBanner({
   );
 
   return (
-    <section className="relative overflow-hidden rounded-[16px] border border-shop_light_green/22 bg-white shadow-[0_24px_46px_-40px_rgba(22,46,110,0.5)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(77,182,198,0.2),transparent_44%),radial-gradient(circle_at_bottom_left,rgba(22,46,110,0.12),transparent_45%)]" />
+    <section className="relative isolate overflow-hidden rounded-[28px] border border-white/10 bg-[#02070d] text-[#edf7ff] shadow-[0_34px_90px_-54px_rgba(56,189,248,0.68)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_30%,rgba(56,189,248,0.28),transparent_28%),linear-gradient(110deg,#0a3656,#02070d_70%)]" />
 
-      <div className="relative grid items-center gap-6 p-6 md:grid-cols-[1.2fr_0.8fr] md:px-9 md:py-8">
-        <div className="space-y-4">
-          <p className="inline-flex rounded-full border border-shop_light_green/45 bg-shop_light_bg px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-shop_dark_green">
+      <div className="relative grid min-h-[440px] items-center gap-8 p-7 md:grid-cols-[1.05fr_0.95fr] md:px-14 md:py-12">
+        <div className="space-y-6">
+          <p className="horae-kicker inline-flex items-center gap-3 text-shop_light_green before:h-px before:w-8 before:bg-shop_light_green">
             {badge}
           </p>
-          <h2 className="max-w-2xl text-[1.7rem] font-bold tracking-[-0.02em] text-shop_dark_green md:text-[2.2rem]">
+          <h2 className="font-editorial max-w-2xl text-[clamp(2.6rem,5.5vw,5rem)] font-light uppercase leading-[0.94] tracking-[-0.06em] text-white">
             {title}
           </h2>
-          <p className="max-w-xl text-sm leading-7 text-lightColor">{description}</p>
+          <p className="max-w-xl text-sm leading-7 text-white/52">{description}</p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <Link
               href={ctaHref}
-              className="inline-flex items-center justify-center rounded-md bg-shop_dark_green px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-shop_btn_dark_green"
+              className="horae-button"
             >
               {ctaLabel}
             </Link>
-            <span className="inline-flex rounded-lg bg-shop_light_bg px-4 py-2 text-xs font-semibold text-shop_dark_green md:text-sm">
+            <span className="inline-flex border-l border-shop_light_green px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/65">
               {highlightText}
             </span>
           </div>
         </div>
 
-        <div className="relative min-h-52">
+        <div className="relative min-h-64 md:min-h-[350px]">
           {resolvedImageUrl ? (
             <Image
               src={resolvedImageUrl}
@@ -65,7 +65,7 @@ export default function HomeLoyaltyBanner({
               className="object-contain"
             />
           ) : (
-            <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-shop_light_green/40 bg-white/70 text-sm text-lightColor">
+            <div className="flex h-full items-center justify-center rounded-[22px] border border-dashed border-shop_light_green/35 bg-white/[0.03] text-sm text-lightColor">
               Image de fidelite indisponible
             </div>
           )}

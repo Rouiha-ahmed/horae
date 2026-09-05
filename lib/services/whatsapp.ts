@@ -86,7 +86,7 @@ const buildConfirmationBody = ({
 }: OrderConfirmationWhatsAppInput) => {
   const name = customerName?.trim() || "عميلنا العزيز";
   const orderReference = getPublicOrderReference(orderNumber);
-  return `مرحبا ${name}، تم تسجيل طلبكم لدى Zayna بنجاح. رقم الطلب هو #${orderReference}. شكرا لثقتكم بنا.`;
+  return `مرحبا ${name}، تم تسجيل طلبكم لدى HORAE بنجاح. رقم الطلب هو #${orderReference}. شكرا لثقتكم بنا.`;
 };
 
 const sendTwilioWhatsAppMessage = async (input: {

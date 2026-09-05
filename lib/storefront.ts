@@ -126,7 +126,7 @@ const DEFAULT_HERO_SLIDES: StorefrontHeroSlide[] = [
     ctaLabel: "Explorer la boutique",
     ctaHref: "/shop",
     imageUrl: "/static-assets/banner/banner_1.webp",
-    altText: "Banniere hero Zayna",
+    altText: "Banniere hero HORAE",
     sortOrder: 0,
   },
 ];
@@ -178,7 +178,7 @@ const DEFAULT_SETTINGS: StorefrontSettingsContent = {
   newArrivalsSubtitle: "Les derniers ajouts de notre catalogue.",
   brandsTitle: "Marques partenaires",
   brandsSubtitle: "Des marques dermo-cosmetiques reconnues.",
-  trustTitle: "Pourquoi commander chez Zayna",
+  trustTitle: "Pourquoi commander chez HORAE",
   trustSubtitle: "Des engagements clairs pour une experience d'achat fluide.",
   loyaltyBadge: "Programme fidelite",
   loyaltyTitle: "Cumulez des avantages a chaque commande",
@@ -196,7 +196,7 @@ const DEFAULT_SETTINGS: StorefrontSettingsContent = {
   newsletterSuccessMessage: "Merci, votre inscription a bien ete prise en compte.",
   newsletterErrorMessage:
     "Impossible de valider votre inscription pour le moment.",
-  footerAboutTitle: "A propos de Zayna",
+  footerAboutTitle: "A propos de HORAE",
   footerAboutDescription:
     "Votre parapharmacie en ligne pour une routine beaute et bien-etre complete.",
   footerQuickLinksTitle: "Liens rapides",
@@ -205,7 +205,7 @@ const DEFAULT_SETTINGS: StorefrontSettingsContent = {
   footerContactPhone: null,
   footerContactEmail: null,
   footerContactHours: null,
-  footerCopyrightText: "ZAYNA. Tous droits reserves.",
+  footerCopyrightText: "HORAE. Tous droits reserves.",
   featuredCategoriesLimit: 8,
   promotionsLimit: 10,
   bestSellersLimit: 10,

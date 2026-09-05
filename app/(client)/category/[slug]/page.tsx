@@ -28,18 +28,18 @@ const CategoryPage = async ({
   if (!currentCategory) notFound();
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f0f7f9_0%,#f8fafb_100%)]">
+    <div className="horae-page pb-24">
       {/* Page hero */}
-      <div className="border-b border-shop_light_green/15 bg-white">
+      <div className="mx-3 mt-3 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_16%_0%,rgba(55,176,237,0.42),transparent_38%),linear-gradient(118deg,#0a456d,#02070d_68%)] text-[#edf7ff]">
         <Container>
-          <div className="py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-shop_light_green">
+          <div className="flex min-h-[300px] flex-col justify-end py-12 md:min-h-[380px] md:py-16">
+            <p className="horae-kicker text-shop_light_green">
               Catalogue
             </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-shop_dark_green md:text-3xl capitalize">
+            <h1 className="horae-display mt-5 capitalize text-[#edf7ff]">
               {currentCategory.title}
             </h1>
-            <p className="mt-1 text-sm text-lightColor">
+            <p className="mt-7 text-sm text-white/45">
               Retrouvez tous les produits de cette categorie.
             </p>
           </div>
@@ -47,7 +47,7 @@ const CategoryPage = async ({
       </div>
 
       <Container>
-        <div className="py-8">
+        <div className="py-14 md:py-20">
           <CategoryProducts
             categories={categories}
             slug={slug}

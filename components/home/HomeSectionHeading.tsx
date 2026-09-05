@@ -12,13 +12,14 @@ export default function HomeSectionHeading({
   action,
 }: HomeSectionHeadingProps) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3 md:mb-7">
-      <div className="space-y-1">
-        <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] text-shop_dark_green md:text-[1.85rem]">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-5 border-b border-white/10 pb-5 md:mb-10">
+      <div className="space-y-2">
+        <p className="horae-kicker text-shop_light_green">Selection HORAE</p>
+        <h2 className="font-editorial text-[clamp(2.3rem,5vw,4.35rem)] font-light uppercase leading-[0.94] tracking-[-0.055em] text-shop_dark_green">
           {title}
         </h2>
         {subtitle ? (
-          <p className="max-w-2xl text-[14px] leading-6 text-lightColor">{subtitle}</p>
+          <p className="max-w-2xl text-[13px] leading-6 text-lightColor">{subtitle}</p>
         ) : null}
       </div>
       {action}

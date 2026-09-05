@@ -19,7 +19,7 @@ const NoProductAvailable = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       className={cn(
-        "relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[28px] border border-shop_light_green/20 bg-white px-6 py-16 text-center shadow-[0_8px_32px_-16px_rgba(22,46,110,0.1)]",
+        "relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[24px] border border-shop_light_green/25 bg-white/[0.03] px-6 py-16 text-center",
         className
       )}
     >
@@ -31,7 +31,7 @@ const NoProductAvailable = ({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="relative mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] border border-shop_light_green/25 bg-[linear-gradient(135deg,#eef7f9,#f0f4ff)] shadow-[0_12px_28px_-14px_rgba(22,46,110,0.2)]"
+        className="relative mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-shop_light_green/45 bg-shop_light_green/10"
       >
         <PackageSearch className="h-9 w-9 text-shop_btn_dark_green" strokeWidth={1.5} />
         <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-shop_light_green shadow-sm">
@@ -85,14 +85,14 @@ const NoProductAvailable = ({
       >
         <Link
           href="/shop"
-          className="inline-flex items-center gap-2 rounded-[14px] bg-shop_btn_dark_green px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_-6px_rgba(22,46,110,0.45)] transition-all hover:-translate-y-0.5 hover:bg-shop_dark_green"
+          className="inline-flex items-center gap-2 rounded-full bg-shop_btn_dark_green px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_24px_-10px_rgba(56,189,248,0.7)] transition-all hover:-translate-y-0.5 hover:bg-shop_light_green hover:text-[#02101b]"
         >
           Explorer la boutique
           <ArrowRight className="h-4 w-4" />
         </Link>
         <Link
           href="/#contact"
-          className="inline-flex items-center gap-2 rounded-[14px] border border-shop_light_green/30 bg-white px-5 py-2.5 text-sm font-semibold text-shop_dark_green transition-all hover:-translate-y-0.5 hover:border-shop_light_green/60"
+          className="inline-flex items-center gap-2 rounded-full border border-shop_light_green/30 bg-white/[0.03] px-5 py-2.5 text-sm font-semibold text-shop_dark_green transition-all hover:-translate-y-0.5 hover:border-shop_light_green/60"
         >
           Nous contacter
         </Link>

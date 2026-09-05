@@ -10,7 +10,6 @@ import {
   ShoppingBag,
   Star,
   Trophy,
-  UserRound,
   WalletCards,
 } from "lucide-react";
 import Link from "next/link";

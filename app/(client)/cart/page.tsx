@@ -33,26 +33,26 @@ const CartPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-shop_light_bg/30 pb-16">
+    <div className="horae-page pb-24">
       {isSignedIn ? (
         !hasHydrated ? (
           <Container>
             <div className="py-10">
               <div className="space-y-3">
-                <div className="h-8 w-48 animate-pulse rounded-xl bg-slate-100" />
-                <div className="h-28 animate-pulse rounded-2xl bg-slate-100" />
-                <div className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+                <div className="h-8 w-48 animate-pulse rounded-xl bg-white/[0.05]" />
+                <div className="h-28 animate-pulse rounded-2xl bg-white/[0.05]" />
+                <div className="h-28 animate-pulse rounded-2xl bg-white/[0.05]" />
               </div>
             </div>
           </Container>
         ) : safeGroupedItems.length ? (
           <Container>
-            <div className="flex items-center gap-2.5 py-6">
-              <ShoppingBag className="text-shop_btn_dark_green" size={22} />
-              <Title className="text-xl font-bold text-shop_btn_dark_green">
+            <div className="border-b border-white/10 pb-8 pt-12 md:pb-10 md:pt-16">
+              <p className="horae-kicker flex items-center gap-2 text-shop_light_green"><ShoppingBag size={14} /> Votre sélection</p>
+              <Title className="font-editorial mt-3 text-5xl font-light uppercase tracking-[-0.055em] text-shop_dark_green md:text-7xl">
                 Mon Panier
               </Title>
-              <span className="ml-1 rounded-full bg-shop_btn_dark_green/10 px-2.5 py-0.5 text-xs font-semibold text-shop_btn_dark_green">
+              <span className="mt-4 inline-flex border-l border-shop_light_green px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-lightColor">
                 {safeGroupedItems.length} article{safeGroupedItems.length > 1 ? "s" : ""}
               </span>
             </div>
@@ -60,19 +60,19 @@ const CartPage = () => {
             <div className="grid gap-6 lg:grid-cols-3">
               {/* Product list */}
               <div className="lg:col-span-2">
-                <div className="overflow-hidden rounded-2xl border border-shop_light_green/20 bg-white shadow-sm">
+                <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/70">
                   {safeGroupedItems.map(({ product }) => {
                     const itemCount = getItemCount(product?._id);
                     return (
                       <div
                         key={product?._id}
-                        className="flex items-center gap-4 border-b border-slate-100 p-4 last:border-b-0"
+                        className="flex items-center gap-4 border-b border-white/10 p-4 last:border-b-0 md:p-5"
                       >
                         {/* Image */}
                         {product?.images?.[0] && (
                           <Link
                             href={`/product/${product?.slug?.current}`}
-                            className="shrink-0 overflow-hidden rounded-xl border border-slate-100"
+                            className="shrink-0 overflow-hidden rounded-[18px] border border-white/10 bg-[#050e17]"
                           >
                             <Image
                               src={urlFor(product.images[0]).url()}
@@ -137,8 +137,8 @@ const CartPage = () => {
 
               {/* Summary */}
               <div className="lg:col-span-1">
-                <div className="sticky top-20 rounded-2xl border border-shop_light_green/20 bg-white p-6 shadow-sm">
-                  <h2 className="mb-5 text-base font-bold text-shop_btn_dark_green">
+                <div className="sticky top-28 rounded-[24px] border border-white/10 bg-[#071522]/78 p-6 backdrop-blur-xl">
+                  <h2 className="font-editorial mb-6 text-2xl font-medium uppercase text-shop_dark_green">
                     Récapitulatif
                   </h2>
 
@@ -174,7 +174,7 @@ const CartPage = () => {
 
                   <button
                     onClick={() => router.push("/checkout")}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-shop_btn_dark_green px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-shop_btn_dark_green/90 active:scale-[0.98]"
+                    className="horae-button w-full px-6 py-3.5"
                   >
                     Valider la commande
                     <ArrowRight size={16} />

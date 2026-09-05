@@ -4,28 +4,29 @@ import type { ReactNode } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CartUserGuard from "@/components/CartUserGuard";
+import RouteTransition from "@/components/layout/RouteTransition";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: {
-    template: "%s - Zayna",
-    default: "Zayna",
+    template: "%s — HORAE",
+    default: "HORAE",
   },
-  description: "Boutique en ligne Zayna, tout ce dont vous avez besoin au meme endroit.",
+  description: "HORAE — une selection experte de soins, beaute et bien-etre.",
 };
 
 /** Minimal static skeleton shown while Header data loads (rare — cache hit is instant) */
 function HeaderFallback() {
   return (
-    <div className="sticky top-0 z-50 border-b border-shop_light_green/20 bg-white/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-[60px] max-w-[1300px] items-center justify-between px-4 md:px-6" />
+    <div className="sticky top-0 z-50 bg-[#030a12] px-3 pt-3">
+      <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-5 md:px-8" />
     </div>
   );
 }
 
 function FooterFallback() {
-  return <div className="border-t border-shop_light_green/20 bg-white h-24" />;
+  return <div className="h-24 border-t border-white/10 bg-[#02060b]" />;
 }
 
 export default function RootLayout({
@@ -36,11 +37,11 @@ export default function RootLayout({
   return (
     <>
       <CartUserGuard />
-      <div className="flex flex-col min-h-screen">
+      <div className="flex min-h-screen flex-col bg-shop_light_bg">
         <Suspense fallback={<HeaderFallback />}>
           <Header />
         </Suspense>
-        <main className="flex-1">{children}</main>
+        <main className="flex-1"><RouteTransition>{children}</RouteTransition></main>
         <Suspense fallback={<FooterFallback />}>
           <Footer />
         </Suspense>

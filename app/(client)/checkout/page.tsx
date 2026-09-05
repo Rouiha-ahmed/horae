@@ -158,9 +158,11 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       setPromoState(data);
-      data.valid
-        ? toast.success("Code promo appliqué")
-        : toast.error(data.message || "Code promo invalide");
+      if (data.valid) {
+        toast.success("Code promo appliqué");
+      } else {
+        toast.error(data.message || "Code promo invalide");
+      }
     } catch { toast.error("Erreur lors de la validation"); }
     finally { setLoading(false); }
   };
@@ -258,7 +260,7 @@ export default function CheckoutPage() {
 
   if (!hasHydrated) {
     return (
-      <div className="min-h-screen bg-shop_light_bg/30">
+      <div className="horae-page">
         <Container>
           <div className="grid gap-6 py-10 lg:grid-cols-3">
             <div className="space-y-4 lg:col-span-2">
@@ -275,8 +277,14 @@ export default function CheckoutPage() {
 
   /* ── Render ── */
   return (
-    <div className="min-h-screen bg-shop_light_bg/30 pb-16">
+    <div className="horae-page pb-24">
       <Container>
+        <div className="border-b border-white/10 pb-8 pt-12 md:pb-10 md:pt-16">
+          <p className="horae-kicker text-shop_light_green">Dernière étape</p>
+          <h1 className="font-editorial mt-3 text-5xl font-light uppercase tracking-[-0.055em] md:text-7xl">
+            Votre commande.
+          </h1>
+        </div>
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 py-6 text-xs text-lightColor">
           <Link
@@ -296,8 +304,8 @@ export default function CheckoutPage() {
           <div className="space-y-5 lg:col-span-2">
 
             {/* ── 1. Informations de livraison ── */}
-            <section className="overflow-hidden rounded-2xl border border-shop_light_green/20 bg-white shadow-sm">
-              <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-4">
+            <section className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/70">
+              <div className="flex items-center gap-2.5 border-b border-white/10 px-5 py-4">
                 <MapPin size={15} className="text-shop_light_green" />
                 <h2 className="text-sm font-bold text-shop_btn_dark_green">
                   Informations de livraison
@@ -316,7 +324,7 @@ export default function CheckoutPage() {
                         <button
                           key={addr._id}
                           onClick={() => prefillFrom(addr)}
-                          className="rounded-full border border-shop_light_green/30 bg-shop_light_bg/60 px-3 py-1.5 text-xs font-medium text-shop_dark_green transition hover:border-shop_btn_dark_green hover:bg-shop_btn_dark_green/5 hover:text-shop_btn_dark_green"
+                          className="border border-shop_light_green/35 px-3 py-1.5 text-xs font-medium text-shop_dark_green transition hover:border-shop_btn_dark_green"
                         >
                           {addr.name} — {addr.city}
                         </button>
@@ -339,7 +347,7 @@ export default function CheckoutPage() {
                     <select
                       value={form.pays}
                       onChange={fieldChange("pays")}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-shop_dark_green outline-none focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                      className="w-full rounded-none border border-black/15 bg-transparent px-4 py-2.5 text-sm text-shop_dark_green outline-none focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                     >
                       <option value="Maroc">Maroc</option>
                     </select>
@@ -355,7 +363,7 @@ export default function CheckoutPage() {
                         value={form.prenom}
                         onChange={fieldChange("prenom")}
                         placeholder="Prénom"
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-slate-300 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                        className="w-full rounded-none border border-black/15 bg-transparent px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-black/25 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                       />
                     </div>
                     <div>
@@ -366,7 +374,7 @@ export default function CheckoutPage() {
                         value={form.nom}
                         onChange={fieldChange("nom")}
                         placeholder="Nom de famille"
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-slate-300 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                        className="w-full rounded-none border border-black/15 bg-transparent px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-black/25 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                       />
                     </div>
                   </div>
@@ -380,7 +388,7 @@ export default function CheckoutPage() {
                       value={form.adresse}
                       onChange={fieldChange("adresse")}
                       placeholder="Numéro et nom de rue, appartement…"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-slate-300 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                      className="w-full rounded-none border border-black/15 bg-transparent px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-black/25 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                     />
                   </div>
 
@@ -397,7 +405,7 @@ export default function CheckoutPage() {
                         value={form.codePostal}
                         onChange={fieldChange("codePostal")}
                         placeholder="Ex : 20000"
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-slate-300 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                        className="w-full rounded-none border border-black/15 bg-transparent px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-black/25 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                       />
                     </div>
                     <div>
@@ -408,7 +416,7 @@ export default function CheckoutPage() {
                         value={form.ville}
                         onChange={fieldChange("ville")}
                         placeholder="Ex : Casablanca"
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-slate-300 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                        className="w-full rounded-none border border-black/15 bg-transparent px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-black/25 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                       />
                     </div>
                   </div>
@@ -423,7 +431,7 @@ export default function CheckoutPage() {
                       onChange={fieldChange("telephone")}
                       placeholder="Ex : +212 6 00 00 00 00"
                       type="tel"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-slate-300 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                      className="w-full rounded-none border border-black/15 bg-transparent px-4 py-2.5 text-sm text-shop_dark_green outline-none placeholder:text-black/25 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                     />
                   </div>
 
@@ -433,8 +441,8 @@ export default function CheckoutPage() {
                       onClick={() => setSaveAddress((v) => !v)}
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition ${
                         saveAddress
-                          ? "border-shop_btn_dark_green bg-shop_btn_dark_green"
-                          : "border-slate-300 hover:border-shop_light_green"
+                          ? "border-shop_light_green bg-shop_btn_dark_green"
+                          : "border-white/20 hover:border-shop_light_green"
                       }`}
                     >
                       {saveAddress && (
@@ -456,8 +464,8 @@ export default function CheckoutPage() {
             </section>
 
             {/* ── 2. Mode d'expédition ── */}
-            <section className="overflow-hidden rounded-2xl border border-shop_light_green/20 bg-white shadow-sm">
-              <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-4">
+            <section className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/70">
+              <div className="flex items-center gap-2.5 border-b border-white/10 px-5 py-4">
                 <Truck size={15} className="text-shop_light_green" />
                 <h2 className="text-sm font-bold text-shop_btn_dark_green">
                   Mode d&apos;expédition
@@ -479,15 +487,15 @@ export default function CheckoutPage() {
                     <button
                       key={value}
                       onClick={() => setZone(value)}
-                      className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${
+                      className={`flex w-full items-center gap-4 border p-4 text-left transition ${
                         isSelected
                           ? "border-shop_btn_dark_green bg-shop_btn_dark_green/5"
-                          : "border-slate-200 hover:border-shop_light_green/50"
+                          : "border-white/12 hover:border-shop_light_green/50"
                       }`}
                     >
                       <div
                         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                          isSelected ? "border-shop_btn_dark_green" : "border-slate-300"
+                          isSelected ? "border-shop_light_green" : "border-white/20"
                         }`}
                       >
                         {isSelected && (
@@ -518,8 +526,8 @@ export default function CheckoutPage() {
             </section>
 
             {/* ── 3. Paiement ── */}
-            <section className="overflow-hidden rounded-2xl border border-shop_light_green/20 bg-white shadow-sm">
-              <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-4">
+            <section className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/70">
+              <div className="flex items-center justify-between gap-2 border-b border-white/10 px-5 py-4">
                 <div className="flex items-center gap-2.5">
                   <CreditCard size={15} className="text-shop_light_green" />
                   <h2 className="text-sm font-bold text-shop_btn_dark_green">Paiement</h2>
@@ -555,15 +563,15 @@ export default function CheckoutPage() {
                     <div key={value}>
                       <button
                         onClick={() => setPaymentMethod(value)}
-                        className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${
+                        className={`flex w-full items-center gap-4 border p-4 text-left transition ${
                           isSelected
                             ? "border-shop_btn_dark_green bg-shop_btn_dark_green/5"
-                            : "border-slate-200 hover:border-shop_light_green/50"
+                            : "border-white/12 hover:border-shop_light_green/50"
                         }`}
                       >
                         <div
                           className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                            isSelected ? "border-shop_btn_dark_green" : "border-slate-300"
+                            isSelected ? "border-shop_light_green" : "border-white/20"
                           }`}
                         >
                           {isSelected && (
@@ -591,7 +599,7 @@ export default function CheckoutPage() {
                         )}
                       </button>
                       {isSelected && (
-                        <p className="mt-1.5 rounded-xl bg-slate-50 px-4 py-3 text-xs text-lightColor">
+                        <p className="mt-1.5 border-l border-shop_light_green bg-black/[0.03] px-4 py-3 text-xs text-lightColor">
                           {desc}
                         </p>
                       )}
@@ -604,7 +612,7 @@ export default function CheckoutPage() {
 
           {/* ══ RIGHT — Order summary ══ */}
           <div className="lg:col-span-1">
-            <div className="sticky top-20 overflow-hidden rounded-2xl border border-shop_light_green/20 bg-white shadow-sm">
+            <div className="sticky top-28 overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/78 backdrop-blur-xl">
 
               {/* Products */}
               <div className="border-b border-slate-100 p-5">
@@ -618,7 +626,7 @@ export default function CheckoutPage() {
                       <div key={product?._id} className="flex items-center gap-3">
                         <div className="relative shrink-0">
                           {product?.images?.[0] && (
-                            <div className="overflow-hidden rounded-xl border border-slate-100">
+                            <div className="overflow-hidden rounded-xl border border-white/10 bg-[#050e17]">
                               <Image
                                 src={urlFor(product.images[0]).url()}
                                 alt={product?.name || "Produit"}
@@ -655,12 +663,12 @@ export default function CheckoutPage() {
                     onChange={(e) => setPromoCode(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && applyPromo()}
                     placeholder="Code de réduction ou carte-cadeau"
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs text-shop_dark_green outline-none placeholder:text-slate-300 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
+                    className="flex-1 rounded-none border border-black/15 bg-transparent px-3 py-2 text-xs text-shop_dark_green outline-none placeholder:text-black/25 focus:border-shop_light_green focus:ring-2 focus:ring-shop_light_green/20"
                   />
                   <button
                     onClick={applyPromo}
                     disabled={loading}
-                    className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-shop_dark_green hover:bg-slate-50 disabled:opacity-60"
+                    className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-shop_dark_green hover:border-shop_light_green disabled:opacity-60"
                   >
                     Valider
                   </button>
@@ -725,7 +733,7 @@ export default function CheckoutPage() {
                 <button
                   onClick={handleCheckout}
                   disabled={loading || !formValid}
-                  className="w-full rounded-xl bg-shop_btn_dark_green py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-shop_btn_dark_green/90 active:scale-[0.98] disabled:opacity-60"
+                  className="horae-button w-full py-3.5 disabled:opacity-60"
                 >
                   {loading
                     ? "Traitement en cours…"

@@ -208,7 +208,7 @@ export default function HomepageVisualEditor({ data }: { data: HomepageEditorDat
         <div className="px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400"><span>Homepage</span><span>›</span><span>Zayna Admin</span></div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400"><span>Homepage</span><span>›</span><span>HORAE Admin</span></div>
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Éditeur de la homepage</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2">

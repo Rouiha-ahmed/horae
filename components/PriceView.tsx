@@ -26,11 +26,11 @@ const PriceView = ({ price, discount, regularPrice, salePrice, className }: Prop
         : null;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-1.5">
         <PriceFormatter
           amount={currentPrice}
-          className={cn("font-bold text-shop_dark_green", className)}
+          className={cn("text-[13px] font-semibold tracking-[-0.01em] text-shop_dark_green", className)}
         />
         {oldPrice ? (
           <PriceFormatter
@@ -43,7 +43,7 @@ const PriceView = ({ price, discount, regularPrice, salePrice, className }: Prop
         ) : null}
       </div>
       {discount && discount > 0 ? (
-        <span className="rounded-sm bg-shop_light_bg px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.05em] text-shop_dark_green">
+        <span className="rounded-full border border-shop_light_green/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-shop_light_green">
           -{discount}%
         </span>
       ) : null}

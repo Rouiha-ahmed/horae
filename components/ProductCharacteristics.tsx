@@ -13,10 +13,10 @@ const ProductCharacteristics = ({
   product: Product | null | undefined;
 }) => {
   return (
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1">
-        <AccordionTrigger>{product?.name}: Caracteristiques</AccordionTrigger>
-        <AccordionContent>
+    <Accordion type="single" collapsible className="border-y border-white/12 text-white">
+      <AccordionItem value="item-1" className="border-none">
+        <AccordionTrigger className="py-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70 hover:text-shop_light_green hover:no-underline">{product?.name}: Caracteristiques</AccordionTrigger>
+        <AccordionContent className="space-y-2 text-xs text-white/48">
           <p className="flex items-center justify-between">
             Marque:{" "}
             <span className="font-semibold tracking-wide">
@@ -40,4 +40,3 @@ const ProductCharacteristics = ({
 };
 
 export default ProductCharacteristics;
-

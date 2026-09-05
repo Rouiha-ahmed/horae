@@ -158,7 +158,7 @@ export default function AdminSidebar({
         )}
         style={{
           backgroundImage:
-            "linear-gradient(180deg, rgba(9, 24, 56, 0.98) 0%, rgba(16, 38, 84, 0.98) 52%, rgba(18, 61, 114, 0.96) 100%)",
+            "radial-gradient(circle at top left, rgba(184,163,106,0.18), transparent 32%), linear-gradient(180deg, #14130f 0%, #0A0A0A 70%)",
         }}
       >
         <div className="relative flex h-full flex-col overflow-hidden">
@@ -171,11 +171,11 @@ export default function AdminSidebar({
                 collapsed ? "w-0 overflow-hidden opacity-0" : "opacity-100"
               )}
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/55">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-shop_light_green">
                 Espace Admin
               </p>
-              <Link href="/admin" className="mt-1 block text-xl font-semibold tracking-tight">
-                Zayna Control
+              <Link href="/admin" className="font-editorial mt-1 block text-2xl font-semibold tracking-[0.08em]">
+                HORAE
               </Link>
             </div>
 
@@ -206,7 +206,7 @@ export default function AdminSidebar({
           <div className="relative flex-1 overflow-y-auto px-3 py-5 lg:px-4">
             <div
               className={cn(
-                "mb-5 rounded-[26px] border border-white/12 bg-white/8 p-4 shadow-[0_24px_70px_-52px_rgba(0,0,0,0.9)] transition-all duration-300",
+                "mb-5 border border-white/12 bg-white/[0.04] p-4 transition-all duration-300",
                 collapsed && "px-2 py-3"
               )}
             >
@@ -239,9 +239,9 @@ export default function AdminSidebar({
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group flex items-center gap-3 rounded-[22px] px-3 py-3 text-sm transition-all duration-200",
+                      "group flex items-center gap-3 rounded-[2px] px-3 py-3 text-sm transition-all duration-200",
                       isActive
-                        ? "bg-white text-[#102654] shadow-[0_18px_45px_-32px_rgba(255,255,255,1)]"
+                        ? "bg-shop_light_green text-black"
                         : "text-white/72 hover:bg-white/10 hover:text-white",
                       collapsed && "justify-center px-2"
                     )}
@@ -251,7 +251,7 @@ export default function AdminSidebar({
                       className={cn(
                         "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors",
                         isActive
-                          ? "bg-shop_light_green/20 text-[#102654]"
+                          ? "bg-black/10 text-black"
                           : "bg-white/8 text-white/82 group-hover:bg-white/12 group-hover:text-white"
                       )}
                     >
@@ -271,7 +271,7 @@ export default function AdminSidebar({
                             className={cn(
                               "rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset",
                               isActive
-                                ? "bg-[#102654]/8 text-[#102654] ring-[#102654]/12"
+                                ? "bg-black/8 text-black ring-black/12"
                                 : item.badgeTone || "bg-white/10 text-white ring-white/15"
                             )}
                           >
@@ -279,7 +279,7 @@ export default function AdminSidebar({
                           </Badge>
                         ) : null}
                       </div>
-                      <p className={cn("mt-0.5 truncate text-xs", isActive ? "text-[#102654]/68" : "text-white/50")}>
+                      <p className={cn("mt-0.5 truncate text-xs", isActive ? "text-black/60" : "text-white/50")}>
                         {item.description}
                       </p>
                     </div>

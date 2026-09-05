@@ -5,7 +5,6 @@ import HeaderDesktopNav from "@/components/HeaderDesktopNav";
 import HeaderMenu from "@/components/HeaderMenu";
 import Logo from "@/components/Logo";
 import MobileMenu from "@/components/MobileMenu";
-import SearchBar from "@/components/SearchBar";
 import type { StorefrontShellData } from "@/lib/storefront";
 
 export default function StorefrontHeader({
@@ -18,15 +17,15 @@ export default function StorefrontHeader({
   const settings = shell.settings;
   const showAnnouncement = settings.announcementEnabled && settings.announcementText.trim();
   const announcementContent = (
-    <p className="line-clamp-1 text-center text-[11px] font-medium text-white/95 md:text-xs">
+    <p className="line-clamp-1 text-center text-[9px] font-medium uppercase tracking-[0.22em] text-sky-100/75 md:text-[10px]">
       {settings.announcementText}
     </p>
   );
 
   return (
-    <div className="sticky top-0 z-50">
+    <div className="sticky top-0 z-50 px-2 pt-2 sm:px-3">
       {showAnnouncement ? (
-        <div className="border-b border-shop_light_green/20 bg-shop_dark_green px-4 py-1.5">
+        <div className="mx-auto max-w-[1536px] rounded-t-[22px] border border-b-0 border-white/10 bg-[#08253b]/90 px-4 py-1.5 backdrop-blur-xl">
           {settings.announcementHref ? (
             <Link
               href={settings.announcementHref}
@@ -40,9 +39,9 @@ export default function StorefrontHeader({
         </div>
       ) : null}
 
-      <header className="border-b border-shop_light_green/20 bg-white/95 shadow-[0_14px_24px_-22px_rgba(22,46,110,0.45)] backdrop-blur-xl">
-        <Container className="py-2.5 text-lightColor md:py-3.5">
-          <div className="grid items-center gap-3 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:gap-6">
+      <header className="mx-auto max-w-[1536px] rounded-[22px] border border-white/10 bg-[#020a12]/78 text-[#edf7ff] shadow-[0_24px_70px_-34px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+        <Container className="py-3.5 md:py-4">
+          <div className="flex items-center justify-between gap-2 lg:grid lg:grid-cols-[190px_minmax(0,1fr)_auto] lg:gap-7">
             <div className="flex min-w-0 items-center gap-2.5">
               <MobileMenu
                 links={shell.headerLinks}
@@ -53,25 +52,20 @@ export default function StorefrontHeader({
               <Logo />
             </div>
 
-            <div className="hidden lg:block">
-              <SearchBar mode="desktop" alwaysOpenDesktop />
+            <div className="hidden min-w-0 lg:block">
+              <HeaderMenu
+                links={shell.headerLinks}
+                categories={shell.navigationCategories}
+                pathnameOverride={pathnameOverride}
+              />
             </div>
 
-            <div className="flex items-center justify-end gap-2.5">
+            <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2.5">
               <HeaderDesktopNav />
             </div>
           </div>
         </Container>
 
-        <div className="hidden border-t border-shop_light_green/15 bg-[#3870C8] lg:block">
-          <Container className="py-2">
-            <HeaderMenu
-              links={shell.headerLinks}
-              categories={shell.navigationCategories}
-              pathnameOverride={pathnameOverride}
-            />
-          </Container>
-        </div>
       </header>
     </div>
   );

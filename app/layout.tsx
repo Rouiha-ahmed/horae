@@ -1,20 +1,20 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Montserrat } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import ServerActionRecovery from "@/components/ServerActionRecovery";
 
-const menuFont = Montserrat({
+const sansFont = Manrope({
   subsets: ["latin"],
-  weight: ["700", "800", "900"],
-  variable: "--font-menu",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-sans",
   display: "swap",
 });
 
 const RootLayout = ({ children }: { children: import("react").ReactNode }) => {
   return (
     <html lang="fr">
-      <body className={`font-poppins antialiased ${menuFont.variable}`}>
+      <body className={`${sansFont.variable} font-sans antialiased`}>
         <ClerkProvider>
           <ServerActionRecovery />
           {children}
@@ -24,20 +24,20 @@ const RootLayout = ({ children }: { children: import("react").ReactNode }) => {
             toastOptions={{
               duration: 2800,
               style: {
-                background: "#ffffff",
-                color: "#162E6E",
+                background: "#071522",
+                color: "#EDF7FF",
                 fontSize: "13px",
-                fontWeight: "500",
+                fontWeight: "600",
                 borderRadius: "16px",
-                border: "1px solid rgba(77,182,198,0.25)",
-                boxShadow: "0 8px 32px -8px rgba(22,46,110,0.18), 0 2px 8px -2px rgba(22,46,110,0.08)",
-                padding: "10px 14px",
+                border: "1px solid rgba(197,226,245,0.14)",
+                boxShadow: "0 18px 50px -26px rgba(27,143,205,0.65)",
+                padding: "12px 16px",
                 maxWidth: "320px",
               },
               success: {
                 iconTheme: {
-                  primary: "#4DB6C6",
-                  secondary: "#ffffff",
+                  primary: "#38BDF8",
+                  secondary: "#02101B",
                 },
               },
               error: {

@@ -66,7 +66,7 @@ export default function HomepageRenderer({ data }: { data: StorefrontHomeData })
     data.hasDynamicSections && shouldUseFullDynamicHomepage(dynamicSections);
 
   if (data.hasDynamicSections && dynamicSections.length === 0) {
-    return <div className="min-h-12 bg-shop_light_bg/35" />;
+    return <div className="min-h-12 bg-shop_light_bg" />;
   }
 
   if (useFullDynamicHomepage && dynamicSections.length > 0) {
@@ -85,8 +85,8 @@ export default function HomepageRenderer({ data }: { data: StorefrontHomeData })
     );
 
     return (
-      <div className="bg-shop_light_bg/35">
-        <Container className="space-y-10 pb-12 pt-4 md:space-y-16 md:pb-16 md:pt-6">
+      <div className="horae-page">
+        <Container className="space-y-20 pb-24 pt-2 md:space-y-28 md:pb-32 md:pt-2">
           {data.hasError ? (
             <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               Certaines sections n&apos;ont pas pu etre chargees depuis la base de donnees. Un
@@ -127,7 +127,7 @@ export default function HomepageRenderer({ data }: { data: StorefrontHomeData })
             action={
               <Link
                 href="/shop"
-                className="inline-flex items-center rounded-md border border-shop_light_green/45 bg-white px-4 py-2 text-sm font-semibold text-shop_dark_green transition-colors hover:border-shop_dark_green hover:text-shop_btn_dark_green"
+                className="horae-outline-button"
               >
                 Voir tout
               </Link>
@@ -148,7 +148,7 @@ export default function HomepageRenderer({ data }: { data: StorefrontHomeData })
             action={
               <Link
                 href="/deal"
-                className="inline-flex items-center rounded-md bg-shop_dark_green px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-shop_btn_dark_green"
+                className="horae-button"
               >
                 Voir les deals
               </Link>
@@ -266,8 +266,8 @@ export default function HomepageRenderer({ data }: { data: StorefrontHomeData })
   );
 
   return (
-    <div className="bg-shop_light_bg/35">
-      <Container className="space-y-10 pb-12 pt-4 md:space-y-16 md:pb-16 md:pt-6">
+    <div className="horae-page">
+      <Container className="space-y-20 pb-24 pt-2 md:space-y-28 md:pb-32 md:pt-2">
         {data.hasError ? (
           <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             Certaines sections n&apos;ont pas pu etre chargees depuis la base de donnees. Un

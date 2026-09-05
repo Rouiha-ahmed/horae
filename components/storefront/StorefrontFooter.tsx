@@ -11,7 +11,7 @@ export default function StorefrontFooter({ shell }: { shell: StorefrontShellData
   const settings = shell.settings;
 
   return (
-    <footer className="border-t border-shop_light_green/20 bg-white">
+    <footer className="border-t border-white/10 bg-[#02060b] text-[#edf7ff]">
       <Container>
         <FooterTop
           phone={settings.footerContactPhone}
@@ -19,29 +19,29 @@ export default function StorefrontFooter({ shell }: { shell: StorefrontShellData
           email={settings.footerContactEmail}
         />
 
-        <div className="grid grid-cols-1 gap-8 py-10 md:grid-cols-2 md:gap-10 md:py-12 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-10 py-14 md:grid-cols-2 md:gap-12 md:py-20 lg:grid-cols-[1.35fr_1fr_1fr_1.2fr]">
           <div>
             <Logo />
-            <SubTitle className="mt-4 text-[15px] font-bold">{settings.footerAboutTitle}</SubTitle>
-            <SubText className="mt-2">{settings.footerAboutDescription}</SubText>
+            <SubTitle className="mt-6 font-editorial text-xl font-medium uppercase tracking-[-0.035em] text-white">{settings.footerAboutTitle}</SubTitle>
+            <SubText className="mt-3 max-w-xs leading-7 text-white/48">{settings.footerAboutDescription}</SubText>
             <SocialMedia
               links={shell.socialLinks}
-              className="mt-4 text-darkColor/60"
-              iconClassName="h-9 w-9 rounded-lg border-shop_light_green/30 hover:border-shop_light_green hover:text-shop_dark_green"
-              tooltipClassName="bg-darkColor text-white"
+              className="mt-6 text-white/55"
+              iconClassName="h-9 w-9 rounded-full border-white/15 hover:border-shop_light_green hover:bg-shop_light_green hover:text-[#02101b]"
+              tooltipClassName="bg-shop_light_bg text-shop_dark_green"
             />
           </div>
 
           <div>
-            <SubTitle className="text-[15px] font-bold">{settings.footerQuickLinksTitle}</SubTitle>
-            <ul className="mt-4 space-y-2.5 text-sm">
+            <SubTitle className="horae-kicker text-shop_light_green">{settings.footerQuickLinksTitle}</SubTitle>
+            <ul className="mt-6 space-y-3 text-sm">
               {shell.footerQuickLinks.map((item) => (
                 <li key={item.id}>
                   <Link
                     href={item.href}
                     target={item.openInNewTab ? "_blank" : undefined}
                     rel={item.openInNewTab ? "noopener noreferrer" : undefined}
-                    className="font-medium text-gray-700 transition-colors hover:text-shop_dark_green"
+                    className="text-white/52 transition-colors hover:text-white"
                   >
                     {item.title}
                   </Link>
@@ -51,13 +51,13 @@ export default function StorefrontFooter({ shell }: { shell: StorefrontShellData
           </div>
 
           <div>
-            <SubTitle className="text-[15px] font-bold">{settings.footerCategoriesTitle}</SubTitle>
-            <ul className="mt-4 space-y-2.5 text-sm">
+            <SubTitle className="horae-kicker text-shop_light_green">{settings.footerCategoriesTitle}</SubTitle>
+            <ul className="mt-6 space-y-3 text-sm">
               {shell.footerCategories.map((item) => (
                 <li key={item._id}>
                   <Link
                     href={item.slug?.current ? `/category/${item.slug.current}` : "/shop"}
-                    className="font-medium capitalize text-gray-700 transition-colors hover:text-shop_dark_green"
+                    className="capitalize text-white/52 transition-colors hover:text-white"
                   >
                     {item.title || "Categorie"}
                   </Link>
@@ -67,15 +67,15 @@ export default function StorefrontFooter({ shell }: { shell: StorefrontShellData
           </div>
 
           <div className="space-y-4">
-            <SubTitle className="text-[15px] font-bold">{settings.footerLegalLinksTitle}</SubTitle>
-            <ul className="space-y-2.5 text-sm">
+            <SubTitle className="horae-kicker text-shop_light_green">{settings.footerLegalLinksTitle}</SubTitle>
+            <ul className="space-y-3 text-sm">
               {shell.footerLegalLinks.map((item) => (
                 <li key={item.id}>
                   <Link
                     href={item.href}
                     target={item.openInNewTab ? "_blank" : undefined}
                     rel={item.openInNewTab ? "noopener noreferrer" : undefined}
-                    className="font-medium text-gray-700 transition-colors hover:text-shop_dark_green"
+                    className="text-white/52 transition-colors hover:text-white"
                   >
                     {item.title}
                   </Link>
@@ -83,14 +83,14 @@ export default function StorefrontFooter({ shell }: { shell: StorefrontShellData
               ))}
             </ul>
 
-            <div className="rounded-lg border border-shop_light_green/20 bg-shop_light_bg/45 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-shop_dark_green">
+            <div className="border-l border-shop_light_green/60 px-4 py-1">
+              <p className="horae-kicker text-shop_light_green">
                 Newsletter
               </p>
-              <p className="mt-1 text-sm text-lightColor">{settings.newsletterDescription}</p>
+              <p className="mt-2 text-sm leading-6 text-white/48">{settings.newsletterDescription}</p>
               <Link
                 href="/#newsletter"
-                className="mt-3 inline-flex text-sm font-semibold text-shop_dark_green transition-colors hover:text-shop_btn_dark_green"
+                className="mt-4 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:text-shop_light_green"
               >
                 {settings.newsletterButtonLabel}
               </Link>
@@ -98,8 +98,9 @@ export default function StorefrontFooter({ shell }: { shell: StorefrontShellData
           </div>
         </div>
 
-        <div className="border-t border-shop_light_green/20 py-5 text-center text-xs text-gray-600 md:text-sm">
-          (c) {new Date().getFullYear()} {settings.footerCopyrightText}
+        <div className="flex flex-col gap-2 border-t border-white/10 py-6 text-[10px] uppercase tracking-[0.14em] text-white/35 sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} {settings.footerCopyrightText}</span>
+          <span>Le temps du soin, signé HORAE</span>
         </div>
       </Container>
     </footer>

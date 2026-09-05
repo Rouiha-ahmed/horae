@@ -47,7 +47,7 @@ const ShopPage = async ({
   ]);
 
   return (
-    <div className="bg-white">
+    <div className="bg-shop_light_bg">
       <Shop
         categories={categories}
         brands={brands}
@@ -62,4 +62,3 @@ const ShopPage = async ({
 };
 
 export default ShopPage;
-

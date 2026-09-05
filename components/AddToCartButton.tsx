@@ -46,7 +46,7 @@ const AddToCartButton = ({ product, className }: Props) => {
         <Button
           onClick={handleAddToCart}
           className={cn(
-            "h-10 w-full rounded-md border border-shop_dark_green bg-shop_dark_green px-3 text-sm font-semibold tracking-normal text-white shadow-none hover:border-shop_btn_dark_green hover:bg-shop_btn_dark_green hoverEffect",
+            "h-10 w-full rounded-full border border-shop_light_green/40 bg-shop_btn_dark_green px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-none hover:border-shop_light_green hover:bg-shop_light_green hover:text-[#02101b] hoverEffect",
             className
           )}
         >

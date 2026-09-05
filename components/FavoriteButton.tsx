@@ -44,12 +44,12 @@ const FavoriteButton = ({
         <Link
           href={"/wishlist"}
           className={cn(
-            "group relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-shop_light_green/30 bg-white/90 text-lightColor shadow-[0_10px_24px_-20px_rgba(22,46,110,0.9)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-shop_light_green/70 hover:text-shop_dark_green",
+            "group relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] text-white/65 shadow-[0_10px_24px_-20px_rgba(20,142,207,0.9)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-shop_light_green/70 hover:text-shop_light_green",
             className
           )}
         >
           <Heart className={cn("h-4.5 w-4.5", iconClassName)} />
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-shop_dark_green px-1 text-[10px] font-semibold text-white">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-shop_light_green px-1 text-[9px] font-semibold text-black">
             {safeFavorites.length ? safeFavorites.length : 0}
           </span>
         </Link>
@@ -57,11 +57,11 @@ const FavoriteButton = ({
         <button
           onClick={handleFavorite}
           disabled={!hasHydrated}
-          className="group relative hover:text-shop_light_green hoverEffect border border-shop_light_green/80 hover:border-shop_light_green p-1.5 rounded-sm"
+          className="group relative rounded-full border border-shop_light_green/60 p-2 hover:border-shop_light_green hover:text-shop_light_green hoverEffect"
         >
           {existingProduct ? (
             <Heart
-              fill="#3b9c3c"
+              fill="#38BDF8"
               className="text-shop_light_green/80 group-hover:text-shop_light_green hoverEffect mt-.5 w-5 h-5"
             />
           ) : (
@@ -74,4 +74,3 @@ const FavoriteButton = ({
 };
 
 export default FavoriteButton;
-

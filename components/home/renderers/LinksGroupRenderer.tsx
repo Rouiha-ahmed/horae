@@ -24,7 +24,7 @@ export default function LinksGroupRenderer({ section }: LinksGroupRendererProps)
             href={linkItem.href}
             target={linkItem.openInNewTab ? "_blank" : undefined}
             rel={linkItem.openInNewTab ? "noopener noreferrer" : undefined}
-            className="rounded-[14px] border border-shop_light_green/22 bg-white px-4 py-3 text-sm font-medium text-shop_dark_green transition-colors hover:border-shop_dark_green hover:text-shop_btn_dark_green"
+            className="rounded-[20px] border border-white/10 bg-white/[0.035] px-5 py-4 text-sm font-medium text-shop_dark_green transition-all hover:-translate-y-0.5 hover:border-shop_light_green/55 hover:bg-sky-400/[0.07]"
           >
             {linkItem.title}
           </Link>

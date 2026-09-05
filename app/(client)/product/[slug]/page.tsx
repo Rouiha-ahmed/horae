@@ -32,92 +32,97 @@ const SingleProductPage = async ({
     return notFound();
   }
   return (
-    <Container className="flex flex-col md:flex-row gap-10 py-10">
-      {product?.images && (
-        <ImageView images={product?.images} isStock={product?.stock} />
-      )}
-      <div className="w-full md:w-1/2 flex flex-col gap-5">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold">{product?.name}</h2>
-          <p className="text-sm text-gray-600 tracking-wide">
-            {product?.description}
-          </p>
-          <div className="flex items-center gap-0.5 text-xs">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_8%_0%,rgba(33,143,205,0.22),transparent_34rem),linear-gradient(180deg,#04101c,#02060b)] text-[#edf7ff]">
+      <Container className="grid gap-10 py-10 md:grid-cols-2 md:gap-14 md:py-16 lg:min-h-[calc(100vh-120px)] lg:items-center">
+        {product?.images && (
+          <ImageView images={product?.images} isStock={product?.stock} />
+        )}
+        <div className="flex w-full flex-col gap-6 lg:pr-10">
+          <div className="space-y-4">
+            <p className="horae-kicker flex items-center gap-3 text-shop_light_green before:h-px before:w-8 before:bg-shop_light_green">
+              {product?.brand?.title || "Collection HORAE"}
+            </p>
+            <h1 className="font-editorial text-[clamp(2.8rem,5vw,5.4rem)] font-light uppercase leading-[0.94] tracking-[-0.06em] text-[#edf7ff]">{product?.name}</h1>
+            <p className="max-w-xl text-sm leading-7 tracking-wide text-white/48">
+              {product?.description}
+            </p>
+          <div className="flex items-center gap-1 pt-2 text-xs text-white/50">
             {[...Array(5)].map((_, index) => (
               <StarIcon
                 key={index}
                 size={12}
                 className="text-shop_light_green"
-                fill={"#3b9c3c"}
+                fill={"#38BDF8"}
               />
             ))}
             <p className="font-semibold">{`(120)`}</p>
           </div>
         </div>
-        <div className="space-y-2 border-t border-b border-gray-200 py-5">
+        <div className="space-y-3 border-y border-white/12 py-6">
           <PriceView
             price={product?.price}
             discount={product?.discount}
             regularPrice={product?.regularPrice}
             salePrice={product?.salePrice}
-            className="text-lg font-bold"
+            className="text-lg font-semibold text-white"
           />
           <p
-            className={`px-4 py-1.5 text-sm text-center inline-block font-semibold rounded-lg ${product?.stock === 0 ? "bg-red-100 text-red-600" : "text-green-600 bg-green-100"}`}
+            className={`inline-block rounded-full border px-3 py-1 text-center text-[9px] font-semibold uppercase tracking-[0.14em] ${product?.stock === 0 ? "border-rose-400/40 text-rose-300" : "border-shop_light_green/45 text-shop_light_green"}`}
           >
             {(product?.stock as number) > 0 ? "En stock" : "Rupture de stock"}
           </p>
         </div>
-        <div className="flex items-center gap-2.5 lg:gap-3">
-          <AddToCartButton product={product} />
+        <div className="flex items-center gap-3">
+          <AddToCartButton product={product} className="h-12 rounded-full border-shop_light_green bg-shop_light_green text-[#02101b] hover:bg-transparent hover:text-shop_light_green" />
           <FavoriteButton showProduct={true} product={product} />
         </div>
         <ProductCharacteristics product={product} />
-        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-b-gray-200 py-5 -mt-2">
-          <div className="flex items-center gap-2 text-sm text-black hover:text-red-600 hoverEffect">
+        <div className="grid grid-cols-2 gap-3 border-b border-white/12 py-5 text-white/50 sm:grid-cols-4">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] hover:text-shop_light_green hoverEffect">
             <RxBorderSplit className="text-lg" />
             <p>Comparer la couleur</p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-black hover:text-red-600 hoverEffect">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] hover:text-shop_light_green hoverEffect">
             <FaRegQuestionCircle className="text-lg" />
             <p>Poser une question</p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-black hover:text-red-600 hoverEffect">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] hover:text-shop_light_green hoverEffect">
             <TbTruckDelivery className="text-lg" />
             <p>Livraison et retour</p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-black hover:text-red-600 hoverEffect">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] hover:text-shop_light_green hoverEffect">
             <FiShare2 className="text-lg" />
             <p>Partager</p>
           </div>
         </div>
-        <div className="flex flex-col">
-          <div className="border border-lightColor/25 border-b-0 p-3 flex items-center gap-2.5">
-            <Truck size={30} className="text-shop_orange" />
+        <div className="grid overflow-hidden rounded-[22px] border border-white/12 bg-white/[0.025] sm:grid-cols-2">
+          <div className="flex items-center gap-3 border-b border-white/12 p-4 sm:border-b-0 sm:border-r">
+            <Truck size={24} className="text-shop_orange" />
             <div>
-              <p className="text-base font-semibold text-black">
+              <p className="font-editorial text-lg font-semibold text-white">
                 Livraison gratuite
               </p>
-              <p className="text-sm text-gray-500 underline underline-offset-2">
+              <p className="text-xs leading-5 text-white/40">
                 Entrez votre code postal pour verifier la disponibilite.
               </p>
             </div>
           </div>
-          <div className="border border-lightColor/25 p-3 flex items-center gap-2.5">
-            <CornerDownLeft size={30} className="text-shop_orange" />
+          <div className="flex items-center gap-3 p-4">
+            <CornerDownLeft size={24} className="text-shop_orange" />
             <div>
-              <p className="text-base font-semibold text-black">
+              <p className="font-editorial text-lg font-semibold text-white">
                 Retour de livraison
               </p>
-              <p className="text-sm text-gray-500 ">
+              <p className="text-xs leading-5 text-white/40">
                 Retour gratuit sous 30 jours.{" "}
                 <span className="underline underline-offset-2">Details</span>
               </p>
             </div>
           </div>
         </div>
-      </div>
-    </Container>
+        </div>
+      </Container>
+    </div>
   );
 };
 

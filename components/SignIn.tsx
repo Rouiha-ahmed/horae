@@ -13,7 +13,7 @@ const SignIn = ({ className }: { className?: string }) => {
         type="button"
         disabled
         className={cn(
-          "rounded-full border border-shop_light_green/30 bg-white/90 px-3 py-1.5 text-sm font-semibold text-lightColor/70 shadow-[0_10px_24px_-20px_rgba(22,46,110,0.9)]",
+          "rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-sm font-semibold text-white/60 shadow-[0_10px_24px_-20px_rgba(20,142,207,0.9)]",
           className
         )}
       >

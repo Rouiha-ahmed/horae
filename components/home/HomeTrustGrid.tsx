@@ -34,13 +34,13 @@ export default function HomeTrustGrid({ items }: HomeTrustGridProps) {
         return (
           <article
             key={item.id}
-            className="rounded-[12px] border border-shop_light_green/20 bg-white p-4 shadow-[0_10px_22px_-20px_rgba(22,46,110,0.38)] transition-all duration-300 hover:-translate-y-0.5"
+            className="rounded-[24px] border border-white/10 bg-[#071522]/65 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-shop_light_green/50"
           >
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-shop_light_bg text-shop_dark_green">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-shop_light_green/45 text-shop_dark_green">
               <Icon className="h-4.5 w-4.5" />
             </span>
-            <h3 className="mt-3 text-[15px] font-bold text-shop_dark_green">{item.title}</h3>
-            <p className="mt-1 text-sm leading-6 text-lightColor">{item.description}</p>
+            <h3 className="font-editorial mt-5 text-xl font-semibold text-shop_dark_green">{item.title}</h3>
+            <p className="mt-2 text-[13px] leading-6 text-lightColor">{item.description}</p>
           </article>
         );
       })}

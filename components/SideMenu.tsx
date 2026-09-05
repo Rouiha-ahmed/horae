@@ -50,8 +50,8 @@ const SideMenu: FC<SidebarProps> = ({
       target={item.openInNewTab ? "_blank" : undefined}
       rel={item.openInNewTab ? "noopener noreferrer" : undefined}
       className={cn(
-        "rounded-xl px-3 py-2 capitalize text-[15px] text-lightColor transition-all duration-300 ease-out hover:bg-shop_light_bg hover:text-shop_dark_green",
-        isHrefActive(item.href) && "bg-shop_light_bg text-shop_dark_green"
+        "border-b border-white/8 px-1 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/65 transition-all duration-300 ease-out hover:border-shop_light_green/50 hover:text-white",
+        isHrefActive(item.href) && "border-shop_light_green text-shop_light_green"
       )}
     >
       {item.title}
@@ -61,25 +61,25 @@ const SideMenu: FC<SidebarProps> = ({
   return (
     <div
       className={cn(
-        "fixed inset-0 left-0 z-50 w-full bg-shop_dark_green/10 backdrop-blur-[1.5px] transition-transform duration-300 ease-out",
+        "fixed inset-0 left-0 z-50 w-full bg-black/60 backdrop-blur-sm transition-transform duration-500 ease-[cubic-bezier(.22,1,.36,1)]",
         isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
       )}
     >
       <div
         ref={sidebarRef}
-        className="flex h-screen min-w-72 max-w-96 flex-col gap-6 border-r border-r-shop_light_green/30 bg-white/95 p-8 text-darkColor shadow-2xl"
+        className="flex h-screen min-w-72 max-w-96 flex-col gap-8 rounded-r-[28px] border-r border-r-shop_light_green/25 bg-[#030b13] p-7 text-[#edf7ff] shadow-2xl"
       >
         <div className="flex items-center justify-between gap-5">
           <Logo />
           <button
             onClick={closeSidebar}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-shop_light_green/35 text-lightColor hover:border-shop_light_green hover:text-shop_dark_green hoverEffect"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/65 hover:border-shop_light_green hover:text-shop_light_green hoverEffect"
           >
             <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
-        <div className="font-menu flex flex-col space-y-1.5 font-extrabold tracking-wide">
+        <div className="font-menu flex flex-col">
           {primaryLinks.map(renderNavLink)}
 
           {topLevelCategories.map((category) => {
@@ -99,8 +99,8 @@ const SideMenu: FC<SidebarProps> = ({
                   href={href}
                   onClick={closeSidebar}
                   className={cn(
-                    "rounded-xl px-3 py-2 text-[15px] text-lightColor transition-all duration-300 ease-out hover:bg-shop_light_bg hover:text-shop_dark_green",
-                    isActive && "bg-shop_light_bg text-shop_dark_green"
+                    "border-b border-white/8 px-1 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/65 transition-all duration-300 ease-out hover:border-shop_light_green/50 hover:text-white",
+                    isActive && "border-shop_light_green text-shop_light_green"
                   )}
                 >
                   {title}
@@ -176,11 +176,27 @@ const SideMenu: FC<SidebarProps> = ({
 
           {secondaryLinks.map(renderNavLink)}
         </div>
+        <div className="grid grid-cols-2 gap-px border border-white/10 bg-white/10">
+          <Link
+            href="/wishlist"
+            onClick={closeSidebar}
+            className="bg-[#071522] px-3 py-3 text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-white/60 hover:text-shop_light_green"
+          >
+            Favoris
+          </Link>
+          <Link
+            href="/cart"
+            onClick={closeSidebar}
+            className="bg-[#071522] px-3 py-3 text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-white/60 hover:text-shop_light_green"
+          >
+            Panier
+          </Link>
+        </div>
         <div className="mt-auto border-t border-shop_light_green/20 pt-5">
           <SocialMedia
             links={socialLinks}
-            iconClassName="border-shop_light_green/40 text-lightColor hover:bg-shop_dark_green hover:border-shop_dark_green"
-            tooltipClassName="bg-shop_dark_green text-white"
+            iconClassName="border-white/15 text-white/55 hover:bg-shop_light_green hover:text-black"
+            tooltipClassName="bg-shop_light_bg text-shop_dark_green"
           />
         </div>
       </div>

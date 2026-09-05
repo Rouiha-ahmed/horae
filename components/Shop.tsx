@@ -1,6 +1,6 @@
 "use client";
 import { BRANDS_QUERYResult, Category, Product } from "@/types";
-import { startTransition, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Container from "./Container";
 import Title from "./Title";
 import CategoryList from "./shop/CategoryList";
@@ -65,8 +65,14 @@ const Shop = ({
   const [isFilterPending, startFilterTransition] = useTransition();
   const searchTerm = initialSearchTerm.trim();
 
-  const initCategories = initialSelectedCategory ? [initialSelectedCategory] : [];
-  const initBrands = initialSelectedBrand ? [initialSelectedBrand] : [];
+  const initCategories = useMemo(
+    () => (initialSelectedCategory ? [initialSelectedCategory] : []),
+    [initialSelectedCategory]
+  );
+  const initBrands = useMemo(
+    () => (initialSelectedBrand ? [initialSelectedBrand] : []),
+    [initialSelectedBrand]
+  );
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initCategories);
   const [selectedBrands, setSelectedBrands] = useState<string[]>(initBrands);
@@ -87,8 +93,8 @@ const Shop = ({
 
   const cacheKey = getShopCacheKey({ selectedCategories, selectedBrands, selectedPrice, searchTerm, sortBy });
 
-  useEffect(() => { setSelectedCategories(initCategories); }, [initialSelectedCategory]);
-  useEffect(() => { setSelectedBrands(initBrands); }, [initialSelectedBrand]);
+  useEffect(() => { setSelectedCategories(initCategories); }, [initCategories]);
+  useEffect(() => { setSelectedBrands(initBrands); }, [initBrands]);
   useEffect(() => { setSelectedPrice(initialSelectedPrice); }, [initialSelectedPrice]);
 
   useEffect(() => {
@@ -183,11 +189,20 @@ const Shop = ({
   ];
 
   return (
-    <div className="border-t border-shop_light_green/15">
-      <Container className="mt-5">
+    <div className="horae-page pb-24 pt-3">
+      <div className="mx-3 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_16%_0%,rgba(55,176,237,0.42),transparent_38%),linear-gradient(118deg,#0a456d,#02070d_68%)] text-[#edf7ff]">
+        <Container className="flex min-h-[300px] flex-col justify-end py-12 md:min-h-[380px] md:py-16">
+          <p className="horae-kicker text-shop_light_green">La boutique</p>
+          <h1 className="horae-display mt-5 max-w-5xl">Le rituel,<br />à votre mesure.</h1>
+          <p className="mt-7 max-w-xl text-sm leading-7 text-white/48">
+            Explorez notre collection avec précision — par besoin, maison ou gamme de prix.
+          </p>
+        </Container>
+      </div>
+      <Container className="mt-10 md:mt-16">
         {/* Header row */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <Title className="text-lg uppercase tracking-wide">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
+          <Title className="font-editorial text-3xl font-light uppercase tracking-[-0.045em] md:text-4xl">
             Trouvez les produits selon vos besoins
           </Title>
           {hasActiveFilters && (
@@ -199,7 +214,7 @@ const Shop = ({
                   setSelectedPrice(null);
                 });
               }}
-              className="text-sm font-medium text-shop_dark_green underline underline-offset-2 hover:text-shop_btn_dark_green"
+              className="text-[10px] font-semibold uppercase tracking-[0.14em] text-shop_dark_green underline decoration-shop_light_green underline-offset-4 hover:text-shop_light_green"
             >
               Reinitialiser les filtres
             </button>
@@ -212,14 +227,14 @@ const Shop = ({
             {activeBadges.map((badge) => (
               <span
                 key={badge.label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-shop_light_green/30 bg-shop_btn_dark_green/8 px-3 py-1 text-xs font-semibold text-shop_btn_dark_green"
+                className="inline-flex items-center gap-1.5 rounded-full border border-shop_light_green/40 bg-shop_light_green/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-shop_light_green"
               >
                 {badge.label}
                 <button
                   onClick={badge.onRemove}
-                  className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-shop_btn_dark_green/15 hover:bg-shop_btn_dark_green/30"
+                  className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-shop_light_green/15 hover:bg-shop_light_green/30"
                 >
-                  <svg viewBox="0 0 8 8" className="h-2 w-2 stroke-shop_btn_dark_green stroke-2">
+                  <svg viewBox="0 0 8 8" className="h-2 w-2 stroke-shop_light_green stroke-2">
                     <line x1="1" y1="1" x2="7" y2="7" /><line x1="7" y1="1" x2="1" y2="7" />
                   </svg>
                 </button>
@@ -228,9 +243,9 @@ const Shop = ({
           </div>
         )}
 
-        <div className="flex flex-col gap-5 border-t border-shop_light_green/15 md:flex-row">
+        <div className="flex flex-col gap-8 md:flex-row md:gap-10">
           {/* Sidebar */}
-          <aside className="md:sticky md:top-20 md:self-start md:h-[calc(100vh-160px)] md:overflow-y-auto md:min-w-60 pb-5 md:border-r border-shop_light_green/20 scrollbar-hide">
+          <aside className="overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/72 md:sticky md:top-28 md:min-w-64 md:self-start">
             <CategoryList
               categories={categories}
               selectedCategories={selectedCategories}
@@ -250,15 +265,15 @@ const Shop = ({
           </aside>
 
           {/* Products */}
-          <div className="flex-1 pt-5">
-            <div className="mb-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-7">
               <SortSelect
                 value={sortBy}
                 onChange={(v) => startFilterTransition(() => setSortBy(v))}
                 total={products.length}
               />
             </div>
-            <div className="relative h-[calc(100vh-160px)] overflow-y-auto pr-2 scrollbar-hide">
+            <div className="relative">
               {showInitialLoader ? (
                 <div className="flex flex-col items-center justify-center gap-3 p-20">
                   <Loader2 className="h-10 w-10 animate-spin text-shop_light_green" />
@@ -270,14 +285,14 @@ const Shop = ({
                 <>
                   {showInlineLoading && (
                     <div className="sticky top-0 z-10 mb-3 flex justify-end">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-shop_light_green/30 bg-white/90 px-3 py-1.5 text-xs font-medium text-shop_dark_green shadow-sm">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-shop_light_green/30 bg-[#071522]/95 px-3 py-1.5 text-xs font-medium text-shop_dark_green shadow-sm backdrop-blur-xl">
                         <Loader2 className="h-3.5 w-3.5 animate-spin text-shop_light_green" />
                         Mise a jour...
                       </div>
                     </div>
                   )}
                   <div
-                    className={`grid grid-cols-2 gap-2.5 transition-opacity md:grid-cols-3 lg:grid-cols-4 ${showInlineLoading ? "opacity-60" : "opacity-100"}`}
+                    className={`grid grid-cols-2 gap-x-3 gap-y-9 transition-opacity lg:grid-cols-3 xl:grid-cols-4 ${showInlineLoading ? "opacity-60" : "opacity-100"}`}
                   >
                     {products.map((product) => (
                       <ProductCard key={product._id} product={product} />
@@ -285,7 +300,7 @@ const Shop = ({
                   </div>
                 </>
               ) : (
-                <NoProductAvailable className="bg-white mt-0" />
+                <NoProductAvailable className="mt-0 rounded-[24px] border border-white/10 bg-white/[0.03]" />
               )}
             </div>
           </div>

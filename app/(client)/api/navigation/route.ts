@@ -8,11 +8,7 @@ export const dynamic = "force-dynamic";
 
 const getNavContext = unstable_cache(
   async (userId: string) => {
-    const [ordersCount, identity] = await Promise.all([
-      prisma.order.count({ where: { clerkUserId: userId } }),
-      // Re-use admin identity which is already cached via React cache()
-      Promise.resolve(null),
-    ]);
+    const ordersCount = await prisma.order.count({ where: { clerkUserId: userId } });
     return { ordersCount };
   },
   ["nav-context"],

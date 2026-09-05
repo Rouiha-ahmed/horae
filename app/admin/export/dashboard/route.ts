@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const period = parseDashboardPeriod(request.nextUrl.searchParams.get("period") || undefined);
   const data = await getAdminPilotageDashboard(period);
   const rows: Array<Array<string | number | null | undefined>> = [
-    ["Dashboard Zayna", data.window.label],
+    ["Dashboard HORAE", data.window.label],
     ["Période", data.window.start, data.window.end],
     ["Comparaison", data.window.previousStart, data.window.previousEnd],
     [],

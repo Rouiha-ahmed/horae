@@ -19,7 +19,7 @@ export default function CategorySectionRenderer({ section }: CategorySectionRend
     section.ctaLabel && section.ctaLink ? (
       <Link
         href={section.ctaLink}
-        className="inline-flex items-center rounded-md border border-shop_light_green/45 bg-white px-4 py-2 text-sm font-semibold text-shop_dark_green transition-colors hover:border-shop_dark_green hover:text-shop_btn_dark_green"
+        className="horae-outline-button"
       >
         {section.ctaLabel}
       </Link>

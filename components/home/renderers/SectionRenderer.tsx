@@ -43,7 +43,7 @@ export default function SectionRenderer({ section }: SectionRendererProps) {
   }
 
   if (section.type === "links_group") {
-    return null;
+    return <LinksGroupRenderer section={section} />;
   }
 
   if (section.type === "social_links") {
@@ -58,7 +58,7 @@ export default function SectionRenderer({ section }: SectionRendererProps) {
     }
 
     return (
-      <section id={section.key} className="scroll-mt-28 rounded-[16px] border border-shop_light_green/24 bg-white p-6 shadow-[0_18px_38px_-32px_rgba(22,46,110,0.45)] md:p-8">
+      <section id={section.key} className="scroll-mt-28 rounded-[28px] border border-white/10 bg-[#071522]/70 p-6 shadow-[0_24px_55px_-38px_rgba(56,189,248,0.45)] md:p-8">
         <div
           className="prose prose-slate max-w-none"
           dangerouslySetInnerHTML={{ __html: html }}
@@ -80,7 +80,7 @@ export default function SectionRenderer({ section }: SectionRendererProps) {
       .filter(Boolean);
 
     return (
-      <section id={section.key} className="scroll-mt-28 rounded-[16px] border border-shop_light_green/24 bg-white p-6 shadow-[0_18px_38px_-32px_rgba(22,46,110,0.45)] md:p-8">
+      <section id={section.key} className="scroll-mt-28 rounded-[28px] border border-white/10 bg-[#071522]/70 p-6 shadow-[0_24px_55px_-38px_rgba(56,189,248,0.45)] md:p-8">
         <h2 className="text-[1.5rem] font-bold tracking-[-0.02em] text-shop_dark_green md:text-[1.85rem]">
           {section.title}
         </h2>

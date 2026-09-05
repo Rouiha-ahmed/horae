@@ -392,7 +392,7 @@ const capturePublishedSnapshot = async (
       ctaLabel: "Explorer la boutique",
       ctaHref: "/shop",
       imageUrl: "/static-assets/banner/banner_1.webp",
-      altText: "Bannière Hero Zayna",
+      altText: "Bannière Hero HORAE",
       sortOrder: 0,
       isActive: true,
       archivedAt: null,

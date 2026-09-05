@@ -29,30 +29,30 @@ const TIER_STYLE: Record<LoyaltyTier, {
   ring: string; bar: string; badge: string; glow: string;
 }> = {
   bronze: {
-    gradient: "from-amber-500 via-orange-500 to-amber-600",
-    text:     "text-amber-100",
+    gradient: "from-[#242424] to-[#0A0A0A]",
+    text:     "text-white",
     icon:     Shield,
     ring:     "ring-amber-300/40",
-    bar:      "bg-amber-500",
-    badge:    "bg-amber-50 text-amber-700 ring-amber-200",
-    glow:     "shadow-[0_24px_64px_-20px_rgba(245,158,11,0.5)]",
+    bar:      "bg-[#0A0A0A]",
+    badge:    "bg-black text-white ring-black/10",
+    glow:     "shadow-[0_24px_64px_-30px_rgba(10,10,10,0.55)]",
   },
   silver: {
-    gradient: "from-slate-400 via-slate-500 to-slate-600",
-    text:     "text-slate-100",
+    gradient: "from-[#d8d7d0] to-[#a8a69f]",
+    text:     "text-black",
     icon:     Medal,
     ring:     "ring-slate-300/40",
-    bar:      "bg-slate-400",
-    badge:    "bg-slate-100 text-slate-600 ring-slate-300",
+    bar:      "bg-[#a8a69f]",
+    badge:    "bg-[#d8d7d0] text-black ring-black/10",
     glow:     "shadow-[0_24px_64px_-20px_rgba(100,116,139,0.45)]",
   },
   gold: {
-    gradient: "from-yellow-400 via-amber-400 to-yellow-500",
-    text:     "text-yellow-900",
+    gradient: "from-[#c5b37c] to-[#B8A36A]",
+    text:     "text-black",
     icon:     Crown,
-    ring:     "ring-yellow-300/60",
-    bar:      "bg-yellow-400",
-    badge:    "bg-yellow-50 text-yellow-700 ring-yellow-300",
+    ring:     "ring-shop_light_green/60",
+    bar:      "bg-[#B8A36A]",
+    badge:    "bg-shop_light_green text-black ring-black/10",
     glow:     "shadow-[0_24px_64px_-20px_rgba(234,179,8,0.55)]",
   },
 };
@@ -87,16 +87,16 @@ export default async function LoyaltyPage() {
     : "?";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-20">
-      <Container className="py-10">
+    <div className="horae-page pb-24">
+      <Container className="py-12 md:py-16">
 
         {/* ─── Page header ─── */}
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-shop_light_green/25 bg-shop_light_green/10 px-3.5 py-1.5 text-xs font-semibold text-shop_btn_dark_green">
+        <div className="mb-12 border-b border-white/10 pb-8">
+          <div className="horae-kicker inline-flex items-center gap-2 text-shop_light_green">
             <Star className="h-3.5 w-3.5" />
-            Programme de fidélité Zayna
+            Programme de fidélité HORAE
           </div>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-shop_dark_green">
+          <h1 className="font-editorial mt-3 text-5xl font-light uppercase tracking-[-0.055em] text-shop_dark_green md:text-7xl">
             Ma Carte Fidélité
           </h1>
           <p className="mt-2 max-w-xl text-sm text-slate-500">
@@ -112,7 +112,7 @@ export default async function LoyaltyPage() {
             {/* ─── Loyalty Card ─── */}
             <div
               className={cn(
-                "relative overflow-hidden rounded-[32px] bg-gradient-to-br p-8",
+                "relative overflow-hidden rounded-[28px] bg-gradient-to-br p-8",
                 "ring-2 transition-all duration-300",
                 style.gradient, style.ring, style.glow
               )}
@@ -126,7 +126,7 @@ export default async function LoyaltyPage() {
               <div className="relative flex items-start justify-between">
                 <div>
                   <p className={cn("text-[11px] font-black uppercase tracking-[0.25em] opacity-75", style.text)}>
-                    Zayna Parapharmacie
+                    HORAE
                   </p>
                   <p className={cn("mt-1 text-[11px] uppercase tracking-wider opacity-50", style.text)}>
                     Carte de fidélité
@@ -181,7 +181,7 @@ export default async function LoyaltyPage() {
             </div>
 
             {/* ─── Progress to next tier ─── */}
-            <div className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
+            <div className="rounded-[24px] border border-white/10 bg-[#071522]/70 p-6">
               <h2 className="text-sm font-bold text-slate-700">
                 Progression vers le prochain palier
               </h2>
@@ -214,11 +214,11 @@ export default async function LoyaltyPage() {
                   </div>
                 </>
               ) : (
-                <div className="mt-4 flex items-center gap-3 rounded-2xl bg-yellow-50 px-5 py-4">
-                  <Crown className="h-5 w-5 text-yellow-500" />
+                <div className="mt-4 flex items-center gap-3 border border-shop_light_green/30 bg-shop_light_green/10 px-5 py-4">
+                  <Crown className="h-5 w-5 text-shop_light_green" />
                   <div>
-                    <p className="text-sm font-bold text-yellow-900">Tier Gold atteint — félicitations !</p>
-                    <p className="text-xs text-yellow-700">Vous bénéficiez de tous les avantages VIP.</p>
+                    <p className="text-sm font-bold text-shop_dark_green">Tier Gold atteint — félicitations !</p>
+                    <p className="text-xs text-lightColor">Vous bénéficiez de tous les avantages VIP.</p>
                   </div>
                 </div>
               )}
@@ -231,13 +231,13 @@ export default async function LoyaltyPage() {
                   {" "}&bull;{" "}
                   <strong className="text-amber-600">300 pts → Argent</strong>
                   {" "}&bull;{" "}
-                  <strong className="text-yellow-600">600 pts → Gold</strong>
+                  <strong className="text-shop_light_green">600 pts → Gold</strong>
                 </p>
               </div>
             </div>
 
             {/* ─── Current tier benefits ─── */}
-            <div className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
+            <div className="rounded-[24px] border border-white/10 bg-[#071522]/70 p-6">
               <div className="flex items-center gap-2">
                 <TierIcon className="h-4 w-4 text-shop_btn_dark_green" />
                 <h2 className="text-sm font-bold text-slate-700">
@@ -259,7 +259,7 @@ export default async function LoyaltyPage() {
           <div className="space-y-5">
 
             {/* ─── All tiers roadmap ─── */}
-            <div className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
+            <div className="rounded-[24px] border border-white/10 bg-[#071522]/70 p-6">
               <h2 className="mb-4 text-sm font-bold text-slate-700">Les 3 paliers</h2>
 
               <div className="space-y-3">
@@ -326,7 +326,7 @@ export default async function LoyaltyPage() {
             </div>
 
             {/* ─── How it works ─── */}
-            <div className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm">
+            <div className="rounded-[24px] border border-white/10 bg-[#071522]/70 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Gift className="h-4 w-4 text-shop_btn_dark_green" />
                 <h2 className="text-sm font-bold text-slate-700">Comment ça marche ?</h2>
@@ -336,7 +336,7 @@ export default async function LoyaltyPage() {
                   {
                     n: "1",
                     title: "Faites vos achats",
-                    desc: "Commandez vos produits préférés sur Zayna.",
+                    desc: "Commandez vos produits préférés sur HORAE.",
                   },
                   {
                     n: "2",
@@ -370,7 +370,7 @@ export default async function LoyaltyPage() {
             {/* ─── CTA ─── */}
             <Link
               href="/shop"
-              className="flex items-center justify-between rounded-[22px] border border-shop_btn_dark_green/20 bg-gradient-to-r from-shop_btn_dark_green/8 to-shop_light_green/10 px-5 py-4 transition hover:border-shop_btn_dark_green/40 hover:shadow-sm"
+              className="flex items-center justify-between rounded-[20px] border border-shop_light_green/35 bg-sky-400/[0.04] px-5 py-4 transition hover:bg-shop_light_green/10"
             >
               <div>
                 <p className="text-sm font-bold text-shop_dark_green">Gagnez plus de points</p>

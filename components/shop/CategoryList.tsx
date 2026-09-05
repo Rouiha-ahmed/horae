@@ -11,9 +11,9 @@ interface Props {
 
 const CategoryList = ({ categories, selectedCategories, onToggle, onReset }: Props) => {
   return (
-    <div className="w-full p-4">
+    <div className="w-full p-5">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-shop_light_green">
+        <p className="horae-kicker text-shop_light_green">
           Categories
         </p>
         {selectedCategories.length > 0 && (
@@ -38,19 +38,19 @@ const CategoryList = ({ categories, selectedCategories, onToggle, onReset }: Pro
               type="button"
               onClick={() => onToggle(slug)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2 text-left text-sm capitalize transition-all duration-150",
+                "flex w-full items-center gap-2.5 border-b border-white/8 px-0 py-2.5 text-left text-xs capitalize transition-all duration-150",
                 isChecked
-                  ? "bg-shop_btn_dark_green/10 text-shop_btn_dark_green font-semibold"
-                  : "text-lightColor hover:bg-slate-50 hover:text-shop_dark_green font-medium"
+                  ? "text-shop_btn_dark_green font-semibold"
+                  : "text-lightColor hover:text-shop_dark_green font-medium"
               )}
             >
               {/* Custom checkbox */}
               <span
                 className={cn(
-                  "flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-all",
+                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all",
                   isChecked
                     ? "border-shop_btn_dark_green bg-shop_btn_dark_green"
-                    : "border-slate-300 bg-white"
+                    : "border-white/20 bg-white/[0.03]"
                 )}
               >
                 {isChecked && (

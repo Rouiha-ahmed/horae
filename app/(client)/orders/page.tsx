@@ -16,19 +16,19 @@ import type { LoyaltyTier } from "@prisma/client";
 
 const TIER_COLORS: Record<LoyaltyTier, { gradient: string; text: string; pill: string }> = {
   bronze: {
-    gradient: "from-amber-500 via-orange-500 to-amber-600",
-    text: "text-amber-100",
-    pill: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    gradient: "from-[#232323] to-[#0A0A0A]",
+    text: "text-white",
+    pill: "bg-black text-white ring-1 ring-black/10",
   },
   silver: {
-    gradient: "from-slate-400 via-slate-500 to-slate-600",
-    text: "text-slate-100",
-    pill: "bg-slate-100 text-slate-600 ring-1 ring-slate-300",
+    gradient: "from-[#d8d7d0] to-[#a8a69f]",
+    text: "text-black",
+    pill: "bg-[#d8d7d0] text-black ring-1 ring-black/10",
   },
   gold: {
-    gradient: "from-yellow-400 via-amber-400 to-yellow-500",
-    text: "text-yellow-900",
-    pill: "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-300",
+    gradient: "from-[#c5b37c] to-[#B8A36A]",
+    text: "text-black",
+    pill: "bg-shop_light_green text-black ring-1 ring-black/10",
   },
 };
 
@@ -58,16 +58,19 @@ const OrdersPage = async () => {
   const { nextTier, pointsNeeded, progressPct } = getPointsToNextTier(points);
 
   return (
-    <div>
+    <div className="horae-page pb-24">
       <OrderStatusAutoRefresh />
-      <Container className="py-10">
+      <Container className="py-12 md:py-16">
+        <div className="mb-10 border-b border-white/10 pb-8">
+          <p className="horae-kicker text-shop_light_green">Votre espace</p>
+          <h1 className="font-editorial mt-3 text-5xl font-light uppercase tracking-[-0.055em] md:text-7xl">Mes commandes.</h1>
+        </div>
         {/* ─── Loyalty mini-banner ─── */}
         <Link
           href="/loyalty"
-          className="mb-6 flex items-center gap-4 overflow-hidden rounded-[24px] bg-gradient-to-r p-[2px] transition hover:opacity-95"
-          style={{ background: "linear-gradient(135deg, #3870C8 0%, #2a5aaa 100%)" }}
+          className="mb-8 flex items-center gap-4 overflow-hidden rounded-[24px] border border-shop_light_green/35 p-px transition hover:border-shop_light_green"
         >
-          <div className="flex w-full items-center gap-4 rounded-[22px] bg-white px-5 py-4">
+          <div className="flex w-full items-center gap-4 rounded-[23px] bg-[#071522]/82 px-5 py-4">
             {/* tier card swatch */}
             <div className={`hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${tierColors.gradient}`}>
               <TierIcon className="h-5 w-5 text-white" />
@@ -97,7 +100,7 @@ const OrdersPage = async () => {
                   </p>
                 </div>
               ) : (
-                <p className="mt-1 text-[11px] text-yellow-600 font-semibold">
+                <p className="mt-1 text-[11px] font-semibold text-shop_light_green">
                   Tier Gold atteint — tous les avantages VIP débloqués !
                 </p>
               )}
@@ -111,7 +114,7 @@ const OrdersPage = async () => {
           </div>
         </Link>
         {orders?.length ? (
-          <Card className="w-full border border-shop_light_green/20 shadow-sm">
+          <Card className="w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#071522]/70 shadow-none">
             <CardHeader className="border-b border-shop_light_green/15">
               <CardTitle className="text-xl text-shop_dark_green">
                 Liste des commandes
@@ -160,14 +163,14 @@ const OrdersPage = async () => {
         ) : (
           <div className="flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <FileX className="h-24 w-24 text-gray-400 mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h2 className="text-2xl font-medium text-shop_dark_green">
               Aucune commande trouvee
             </h2>
-            <p className="mt-2 text-sm text-gray-600 text-center max-w-md">
+            <p className="mt-2 max-w-md text-center text-sm text-lightColor">
               Vous n&apos;avez pas encore passe de commande. Commencez vos
               achats pour voir vos commandes ici !
             </p>
-            <Button asChild className="mt-6">
+            <Button asChild className="horae-button mt-6">
               <Link href="/">Parcourir les produits</Link>
             </Button>
           </div>
@@ -178,4 +181,3 @@ const OrdersPage = async () => {
 };
 
 export default OrdersPage;
-

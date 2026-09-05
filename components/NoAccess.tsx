@@ -16,18 +16,18 @@ const NoAccess = ({
   details?: string;
 }) => {
   return (
-    <div className="flex items-center justify-center py-12 md:py-32 bg-gray-100 p-4">
-      <Card className="w-full max-w-md p-5">
+    <div className="horae-page flex items-center justify-center p-5 py-16 md:py-28">
+      <Card className="w-full max-w-lg rounded-[28px] border-white/10 bg-[#071522]/72 p-6 shadow-none md:p-10">
         <CardHeader className="flex items-center flex-col">
           <Logo />
-          <CardTitle className="text-2xl font-bold text-center">
+          <CardTitle className="font-editorial text-center text-4xl font-light uppercase">
             Bon retour !
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-center font-medium text-darkColor/80">{details}</p>
           <SignInButton mode="modal">
-            <Button className="w-full" size="lg">
+            <Button className="horae-button w-full" size="lg">
               Se connecter
             </Button>
           </SignInButton>
@@ -37,7 +37,7 @@ const NoAccess = ({
             Vous n&apos;avez pas de compte ?
           </div>
           <SignUpButton mode="modal">
-            <Button variant="outline" className="w-full" size="lg">
+            <Button variant="outline" className="horae-outline-button w-full" size="lg">
               Creer un compte
             </Button>
           </SignUpButton>

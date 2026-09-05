@@ -18,7 +18,8 @@ const MobileMenu = ({ links, categories, socialLinks, pathnameOverride }: Mobile
     <>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-shop_light_green/35 bg-white/90 text-lightColor shadow-[0_10px_22px_-18px_rgba(22,46,110,0.5)] hover:border-shop_light_green hover:text-shop_dark_green hoverEffect lg:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/75 hover:border-shop_light_green hover:text-shop_light_green hoverEffect lg:hidden"
+          aria-label="Ouvrir le menu"
         >
             <AlignLeft className='h-4.5 w-4.5'/>
         </button>
